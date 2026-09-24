@@ -1,0 +1,57 @@
+{
+  "rules": {
+    ".read":  false,
+    ".write": false,
+
+    "config": {
+      "cupo": {
+        /* Cualquiera puede leer el cupo; solo el admin (auth) puede escribirlo */
+        ".read":  true,
+        ".write": "auth != null"
+      }
+    },
+
+    "participantes": {
+      /* Lectura pública (sala de espera en tiempo real) */
+      ".read": true,
+      /* Solo usuarios autenticados pueden escribir */
+      ".write": "auth != null",
+      "$uid": {
+        /* Validación estricta de estructura de cada participante */
+        ".validate": "newData.hasChildren(['nombre','cocina','grupo','ts'])
+          && newData.child('nombre').isString()
+          && newData.child('nombre').val().length >= 3
+          && newData.child('nombre').val().length <= 100
+          && (newData.child('cocina').val() === 'si' || newData.child('cocina').val() === 'no')
+          && newData.child('grupo').isString()
+          && newData.child('ts').isNumber()"
+      }
+    },
+
+    "grupos": {
+      /* Lectura pública (todos ven el resultado del sorteo) */
+      ".read": true,
+      /* Solo usuarios autenticados pueden escribir */
+      ".write": "auth != null",
+      "$grupo": {
+        ".validate": "newData.hasChildren(['pais','giroPor','ts'])
+          && newData.child('pais').isString()
+          && newData.child('giroPor').isString()
+          && newData.child('ts').isNumber()"
+      }
+    },
+
+    "admin": {
+      /* El PIN solo puede leerlo un usuario autenticado (signInAnonymously) */
+      "pin": {
+        ".read":  "auth != null",
+        ".write": false
+      },
+      /* El resto del nodo admin es completamente inaccesible */
+      "$other": {
+        ".read":  false,
+        ".write": false
+      }
+    }
+  }
+}

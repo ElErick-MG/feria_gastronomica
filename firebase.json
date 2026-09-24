@@ -1,0 +1,11 @@
+{
+  "hosting": {
+    "site": "feriagastronomica",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}

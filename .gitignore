@@ -1,0 +1,32 @@
+# Variables de entorno
+.env
+.env.local
+.env.*.local
+
+# Firebase CLI cache y credenciales
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+*.json.bak
+serviceAccountKey.json
+
+# Vercel
+.vercel
+
+# Dependencias (si se instalan herramientas)
+node_modules/
+
+# Editores e IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs y temporales del sistema
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+desktop.ini
+
