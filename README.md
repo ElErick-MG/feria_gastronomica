@@ -86,6 +86,8 @@ feria_gastronomica/
 ├── 404.html                # Página de error fallback para Hosting
 ├── .env.example            # Plantilla de variables de entorno (referencia)
 ├── .gitignore              # Excluye caches (.firebase/), logs y archivos sensibles
+├── docs/
+│   └── contextoProyecto.md # Documento maestro de arquitectura y contexto para IAs
 ├── js/
 │   ├── firebase.js         # Configuración Firebase, Auth Anónimo y exports DB
 │   ├── data.js             # Catálogo de países con info gastronómica/cultural
