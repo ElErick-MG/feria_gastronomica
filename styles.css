@@ -210,12 +210,368 @@ li {
   opacity: .45;
 }
 
-/* ===== 10. Ficha del país ===== */
+/* ===== 10. Ficha del país (diseño mejorado) ===== */
 #ficha {
   width: 100%;
   max-width: 820px;
   display: grid;
-  gap: 1rem;
+  gap: 1.2rem;
+}
+
+/* ── Hero con imagen de fondo ── */
+.ficha-hero {
+  position: relative;
+  border-radius: var(--r);
+  overflow: hidden;
+  min-height: 260px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.ficha-hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ficha-hero-overlay {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 2rem 1.5rem 1.5rem;
+  background: linear-gradient(0deg, rgba(27,15,10,.92) 0%, rgba(27,15,10,.6) 60%, transparent 100%);
+  text-align: center;
+}
+
+.ficha-bandera {
+  width: 80px;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px #0005;
+  margin-bottom: .6rem;
+}
+
+.ficha-titulo {
+  font-size: clamp(2rem, 7vw, 3.2rem);
+  color: var(--a);
+  margin-bottom: .2rem;
+}
+
+.ficha-oficial {
+  color: var(--mut);
+  font-size: .95rem;
+}
+
+.ficha-grupo {
+  display: inline-block;
+  margin-top: .5rem;
+  font-size: .8rem;
+  background: linear-gradient(135deg, var(--a), var(--b));
+  color: #1b0f0a;
+  font-weight: 700;
+  padding: .25rem .8rem;
+}
+
+/* ── Datos rápidos ── */
+.ficha-datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .6rem;
+  justify-content: center;
+}
+
+.ficha-dato {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: var(--card);
+  border-radius: 12px;
+  padding: .6rem .9rem;
+  min-width: 140px;
+  flex: 1 1 140px;
+  max-width: 200px;
+}
+
+.ficha-dato-icon {
+  font-size: 1.4rem;
+}
+
+.ficha-dato small {
+  display: block;
+  color: var(--mut);
+  font-size: .65rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.ficha-dato strong {
+  font-size: .82rem;
+  color: var(--ink);
+}
+
+/* ── Secciones genéricas ── */
+.ficha-seccion {
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 1.2rem 1.4rem;
+  text-align: left;
+}
+
+.ficha-seccion-titulo {
+  font-size: 1.1rem;
+  margin-bottom: .8rem;
+  color: var(--a);
+}
+
+/* ── Platos típicos ── */
+.ficha-platos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: .7rem;
+}
+
+.ficha-plato-card {
+  background: rgba(255,255,255,.04);
+  border-radius: 14px;
+  padding: 1rem .7rem;
+  text-align: center;
+  transition: transform .2s, background .2s;
+  cursor: default;
+}
+
+.ficha-plato-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255,255,255,.08);
+}
+
+.ficha-plato-emoji {
+  display: block;
+  font-size: 2.6rem;
+  margin-bottom: .35rem;
+}
+
+.ficha-plato-nombre {
+  font-weight: 600;
+  font-size: .88rem;
+}
+
+/* ── Ingredientes ── */
+.ficha-ingredientes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+
+.ficha-pill {
+  background: linear-gradient(135deg, rgba(242,165,65,.15), rgba(228,87,46,.1));
+  color: var(--a);
+  font-size: .78rem;
+  font-weight: 600;
+  padding: .35rem .8rem;
+  border-radius: 99px;
+  border: 1px solid rgba(242,165,65,.2);
+  white-space: nowrap;
+}
+
+/* ── Tarjetas decoradas (historia, cultura) ── */
+.ficha-card-decorada {
+  position: relative;
+  padding-left: 3.6rem;
+}
+
+.ficha-card-icono {
+  position: absolute;
+  left: 1.2rem;
+  top: 1.2rem;
+  font-size: 1.6rem;
+}
+
+.ficha-card-decorada p {
+  color: var(--mut);
+  line-height: 1.65;
+}
+
+/* ── Tip para la feria ── */
+.ficha-tip {
+  background: linear-gradient(135deg, rgba(242,165,65,.12), rgba(228,87,46,.08));
+  border-left: 4px solid var(--a);
+  border-radius: var(--r);
+  padding: 1.2rem 1.4rem;
+  text-align: left;
+}
+
+.ficha-tip-header {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: .6rem;
+}
+
+.ficha-tip-icon {
+  font-size: 1.8rem;
+}
+
+.ficha-tip h2 {
+  font-size: 1.05rem;
+  color: var(--a);
+}
+
+.ficha-tip p {
+  color: var(--ink);
+  line-height: 1.6;
+}
+
+/* ── Dato curioso ── */
+.ficha-curiosidad {
+  display: flex;
+  align-items: flex-start;
+  gap: .8rem;
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 1.1rem 1.3rem;
+  text-align: left;
+}
+
+.ficha-curiosidad-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.ficha-curiosidad strong {
+  color: var(--a);
+  display: block;
+  margin-bottom: .2rem;
+}
+
+.ficha-curiosidad p {
+  color: var(--mut);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ── CTA final ── */
+.ficha-cta {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: .8rem;
+  color: var(--ink);
+}
+
+/* ── Equipo (miembros del grupo) ── */
+.ficha-equipo-sub {
+  color: var(--mut);
+  font-size: .85rem;
+  margin-bottom: .8rem;
+}
+
+.ficha-equipo {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: .6rem;
+}
+
+.ficha-miembro {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  background: rgba(255,255,255,.04);
+  border-radius: 12px;
+  padding: .6rem .8rem;
+  transition: background .2s;
+}
+
+.ficha-miembro:hover {
+  background: rgba(255,255,255,.08);
+}
+
+.ficha-miembro-yo {
+  background: rgba(242,165,65,.1);
+  border: 1px solid rgba(242,165,65,.25);
+}
+
+.ficha-miembro-yo:hover {
+  background: rgba(242,165,65,.16);
+}
+
+.ficha-miembro-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--a), var(--b));
+  color: #1b0f0a;
+  font-weight: 800;
+  font-size: .95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ficha-miembro-info {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  min-width: 0;
+}
+
+.ficha-miembro-info strong {
+  font-size: .85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ficha-miembro-info .tag {
+  align-self: flex-start;
+}
+
+/* ── Links externos ── */
+.ficha-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: .6rem;
+}
+
+.ficha-link {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  background: rgba(255,255,255,.04);
+  border-radius: 12px;
+  padding: .75rem 1rem;
+  text-decoration: none;
+  color: var(--ink);
+  transition: background .2s, transform .15s;
+}
+
+.ficha-link:hover {
+  background: rgba(255,255,255,.1);
+  transform: translateY(-2px);
+}
+
+.ficha-link-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.ficha-link-label {
+  flex: 1;
+  font-size: .85rem;
+  font-weight: 600;
+}
+
+.ficha-link-arrow {
+  color: var(--a);
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: transform .2s;
+}
+
+.ficha-link:hover .ficha-link-arrow {
+  transform: translate(2px, -2px);
 }
 
 /* ===== 11. Botón tipo link ===== */
@@ -225,6 +581,29 @@ li {
   font-size: .8rem;
   text-decoration: underline;
   padding: .3rem;
+}
+
+/* ===== 11b. Botón de retroceso ===== */
+.btn-back {
+  position: absolute;
+  top: 1.2rem;
+  left: 1.2rem;
+  background: rgba(255, 255, 255, .06);
+  color: var(--mut);
+  font-size: .82rem;
+  font-weight: 600;
+  padding: .45rem .9rem;
+  border-radius: 99px;
+  cursor: pointer;
+  z-index: 2;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background .2s, color .2s;
+}
+
+.btn-back:hover {
+  background: rgba(255, 255, 255, .12);
+  color: var(--ink);
 }
 
 /* ===== 12. Toast de notificaciones ===== */

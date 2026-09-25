@@ -215,39 +215,151 @@ function renderRuleta(me, res) {
   }
 }
 
-/** renderFicha(res) — Paso 7: ficha gastronómica del país */
+/** renderFicha(res) — Paso 7: ficha gastronómica del país (versión mejorada) */
 function renderFicha(res) {
   show("s-ficha");
 
   const p = PAISES.find(x => x.id === res.pais);
   const g = S.parts[S.me].grupo;
 
+  // Miembros del equipo
+  const miembros = Object.values(S.parts).filter(m => m.grupo === g);
+
+  // Links externos generados dinámicamente
+  const enlaces = [
+    { icon: "📖", label: "Gastronomía en Wikipedia",      url: `https://es.wikipedia.org/wiki/${p.wiki}` },
+    { icon: "🎬", label: "Recetas en YouTube",             url: `https://www.youtube.com/results?search_query=recetas+de+${encodeURIComponent(p.n)}+faciles` },
+    { icon: "🔍", label: "Explorar en Google",             url: `https://www.google.com/search?q=gastronomía+tradicional+de+${encodeURIComponent(p.n)}` },
+    { icon: "🍴", label: "Recetas en Cookpad",             url: `https://cookpad.com/buscar/${encodeURIComponent('recetas ' + p.n)}` }
+  ];
+
   $("#ficha").innerHTML = `
-    <div class="box" style="max-width:none">
-      <img src="https://flagcdn.com/w160/${p.iso}.png" alt="Bandera de ${p.n}" width="110" style="border-radius:8px">
-      <h1>${p.n}</h1>
-      <p>${p.of}</p>
-      <p class="tag" style="display:inline-block;margin-top:.5rem">Grupo ${g}</p>
+    <!-- ═══ Hero: imagen + bandera + nombre ═══ -->
+    <div class="ficha-hero">
+      <img class="ficha-hero-img" src="${p.img}" alt="Gastronomía de ${p.n}" loading="lazy">
+      <div class="ficha-hero-overlay">
+        <img class="ficha-bandera" src="https://flagcdn.com/w160/${p.iso}.png" alt="Bandera de ${p.n}">
+        <h1 class="ficha-titulo">${p.n}</h1>
+        <p class="ficha-oficial">${p.of}</p>
+        <span class="tag ficha-grupo">Grupo ${g}</span>
+      </div>
     </div>
-    <div class="grid">
-      ${p.pl.map(x => {
-        const [e, ...n] = x.split(" ");
-        return `<div class="card plato"><span>${e}</span>${n.join(" ")}</div>`;
-      }).join("")}
+
+    <!-- ═══ Datos rápidos ═══ -->
+    <div class="ficha-datos">
+      <div class="ficha-dato">
+        <span class="ficha-dato-icon">🏛️</span>
+        <div><small>Capital</small><strong>${p.cap}</strong></div>
+      </div>
+      <div class="ficha-dato">
+        <span class="ficha-dato-icon">🌍</span>
+        <div><small>Continente</small><strong>${p.con}</strong></div>
+      </div>
+      <div class="ficha-dato">
+        <span class="ficha-dato-icon">🗣️</span>
+        <div><small>Idioma</small><strong>${p.lang}</strong></div>
+      </div>
+      <div class="ficha-dato">
+        <span class="ficha-dato-icon">💰</span>
+        <div><small>Moneda</small><strong>${p.mon}</strong></div>
+      </div>
+      <div class="ficha-dato">
+        <span class="ficha-dato-icon">👥</span>
+        <div><small>Población</small><strong>${p.p}</strong></div>
+      </div>
     </div>
-    <div class="card">
-      <h3>Historia de su gastronomía</h3>
+
+    <!-- ═══ Tu equipo ═══ -->
+    <div class="ficha-seccion">
+      <h2 class="ficha-seccion-titulo">👥 Tu equipo — Grupo ${g}</h2>
+      <p class="ficha-equipo-sub">${miembros.length} integrantes cocinando ${p.n}</p>
+      <div class="ficha-equipo">
+        ${miembros.map(m => {
+          const esYo = slug(m.nombre) === S.me;
+          return `
+            <div class="ficha-miembro${esYo ? ' ficha-miembro-yo' : ''}">
+              <span class="ficha-miembro-avatar">${m.nombre.charAt(0).toUpperCase()}</span>
+              <div class="ficha-miembro-info">
+                <strong>${esc(m.nombre)}${esYo ? ' (Tú)' : ''}</strong>
+                <span class="tag">${m.cocina === "si" ? "👨‍🍳 Con experiencia" : "🌱 Novato"}</span>
+              </div>
+            </div>`;
+        }).join("")}
+      </div>
+    </div>
+
+    <!-- ═══ Platos típicos ═══ -->
+    <div class="ficha-seccion">
+      <h2 class="ficha-seccion-titulo">🍽️ Platos típicos</h2>
+      <div class="ficha-platos">
+        ${p.pl.map(x => {
+          const [emoji, ...nombre] = x.split(" ");
+          return `
+            <div class="ficha-plato-card">
+              <span class="ficha-plato-emoji">${emoji}</span>
+              <span class="ficha-plato-nombre">${nombre.join(" ")}</span>
+            </div>`;
+        }).join("")}
+      </div>
+    </div>
+
+    <!-- ═══ Ingredientes estrella ═══ -->
+    <div class="ficha-seccion">
+      <h2 class="ficha-seccion-titulo">🧂 Ingredientes estrella</h2>
+      <div class="ficha-ingredientes">
+        ${p.ing.map(i => `<span class="ficha-pill">${i}</span>`).join("")}
+      </div>
+    </div>
+
+    <!-- ═══ Historia gastronómica ═══ -->
+    <div class="ficha-seccion ficha-card-decorada">
+      <div class="ficha-card-icono">📜</div>
+      <h2 class="ficha-seccion-titulo">Historia de su gastronomía</h2>
       <p>${p.h}</p>
     </div>
-    <div class="card">
-      <h3>Qué los caracteriza</h3>
+
+    <!-- ═══ Qué los caracteriza ═══ -->
+    <div class="ficha-seccion ficha-card-decorada">
+      <div class="ficha-card-icono">✨</div>
+      <h2 class="ficha-seccion-titulo">Qué los caracteriza</h2>
       <p>${p.k}</p>
     </div>
-    <div class="grid">
-      <div class="card"><h3>Población</h3><p>${p.p}</p></div>
-      <div class="card"><h3>Dato curioso</h3><p>${p.d}</p></div>
+
+    <!-- ═══ Tip para la feria ═══ -->
+    <div class="ficha-tip">
+      <div class="ficha-tip-header">
+        <span class="ficha-tip-icon">👨‍🍳</span>
+        <h2>Tip para la feria</h2>
+      </div>
+      <p>${p.tip}</p>
     </div>
-    <p>¡Investiguen, elijan su plato y a cocinar para la feria!</p>`;
+
+    <!-- ═══ Dato curioso ═══ -->
+    <div class="ficha-curiosidad">
+      <span class="ficha-curiosidad-icon">💡</span>
+      <div>
+        <strong>¿Sabías que…?</strong>
+        <p>${p.d}</p>
+      </div>
+    </div>
+
+    <!-- ═══ Explora más ═══ -->
+    <div class="ficha-seccion">
+      <h2 class="ficha-seccion-titulo">🔗 Investiga más sobre ${p.n}</h2>
+      <div class="ficha-links">
+        ${enlaces.map(l => `
+          <a class="ficha-link" href="${l.url}" target="_blank" rel="noopener noreferrer">
+            <span class="ficha-link-icon">${l.icon}</span>
+            <span class="ficha-link-label">${l.label}</span>
+            <span class="ficha-link-arrow">↗</span>
+          </a>`).join("")}
+      </div>
+    </div>
+
+    <!-- ═══ Call to action ═══ -->
+    <div class="ficha-cta">
+      <p>🎉 ¡Investiguen, elijan su plato y a cocinar para la feria!</p>
+    </div>`;
 
   gsap.from("#ficha > *", { y: 30, opacity: 0, stagger: .1, duration: .6 });
   confetti({ particleCount: 80, spread: 70, origin: { y: .2 } });
@@ -307,6 +419,15 @@ $("#btnReset").onclick   = async () => {
 $("#btnRuleta").onclick  = () => { S.stage = "ruleta"; render(); };
 $("#btnGirar").onclick   = () => girar();
 $("#btnFicha").onclick   = () => { S.stage = "ficha";  render(); };
+
+// ── Navegación: botones de retroceso ───────────────────────────
+$("#btnVolverInicio").onclick  = () => show("s-intro");
+$("#btnVolverNombre").onclick  = () => show("s-nombre");
+$("#btnVolverGrupo").onclick   = () => {
+  if (S.anim) return;               // no salir durante la animación de la ruleta
+  S.stage = "grupo"; render();
+};
+$("#btnVolverGrupoF").onclick  = () => { S.stage = "grupo"; render(); };
 
 // Selección de experiencia en cocina (Sí / No)
 // Delegación de eventos: resuelve fallo de tap en Chrome/Edge Android
