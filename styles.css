@@ -76,6 +76,8 @@ button {
   font-weight: 700;
   cursor: pointer;
   transition: transform .15s;
+  touch-action: manipulation;       /* ← elimina 300ms tap delay en Chrome/Edge Android */
+  -webkit-tap-highlight-color: transparent; /* ← evita flash gris en tap Android */
 }
 
 button:hover:not(:disabled) {

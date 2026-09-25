@@ -309,9 +309,21 @@ $("#btnGirar").onclick   = () => girar();
 $("#btnFicha").onclick   = () => { S.stage = "ficha";  render(); };
 
 // Selección de experiencia en cocina (Sí / No)
-document.querySelectorAll("[data-r]").forEach(b =>
-  b.onclick = () => registrar(b.dataset.r)
-);
+// Delegación de eventos: resuelve fallo de tap en Chrome/Edge Android
+// donde GSAP transforms en la transición de pantalla causan hit-test
+// inválido al asignar onclick directamente a los botones.
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-r]");
+  if (!b || b.disabled) return;
+
+  // Guard: evitar doble tap mientras se procesa el registro
+  const btns = document.querySelectorAll("[data-r]");
+  btns.forEach(x => { x.disabled = true; x.style.pointerEvents = "none"; });
+
+  registrar(b.dataset.r).finally(() => {
+    btns.forEach(x => { x.disabled = false; x.style.pointerEvents = ""; });
+  });
+});
 
 // Identificación: recupera estado si el nombre ya existe en Firebase
 $("#fNombre").onsubmit = async e => {
