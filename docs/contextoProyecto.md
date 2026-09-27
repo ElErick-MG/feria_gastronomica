@@ -67,7 +67,8 @@ feria_gastronomica/
    * Mantiene el estado reactivo `S` con propiedades: `numGrupos` (1–10), `maxPorGrupo` (global), `cupo` (= numGrupos × maxPorGrupo), `letras` (getter A–J), `adminTab` ("grupos" | "paises") y `adminFiltro` ("todos" | continente).
    * Registra listeners en tiempo real (`onValue`) para `config/numGrupos`, `config/maxPorGrupo`, `participantes` y `grupos`.
    * Ejecuta el **algoritmo de balanceo** dinámico de equipos al registrar un participante, respetando el límite `maxPorGrupo` por grupo.
-   * Controla la navegación entre vistas mediante la función `show(id)`, el enrutador `render()` y **botones de retroceso** contextuales.
+   * Controla la navegación entre vistas mediante la función `show(id)`, el enrutador `render()` y el sistema de historial del navegador (`navegar()`, `retroceder()`, `aplicarVista()`).
+   * Gestiona `window.history` y el evento `popstate` para sincronizar el botón de retroceso del navegador y los gestos táctiles (swipe-to-back de Android/iOS), con buffer de retención para prevenir salidas accidentales en la pantalla inicial (`s-intro`) y bloqueo de salida durante el giro de ruleta (`S.anim`).
    * Administra la autenticación anónima y verificación segura del PIN de administrador.
    * Usa **event delegation** en lugar de `onclick` directo para botones críticos (selección cocina, steppers admin, tabs admin, filtros de continente y botones de ver ficha) — necesario para evitar fallos de hit-test en Chrome/Edge Android con GSAP.
 

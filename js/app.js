@@ -91,21 +91,138 @@ export const S = {
   parts: {}, grupos: {},
   me: null, nombre: "", view: null,
   stage: "grupo", anim: false, girando: false, shown: null,
+  fromAdmin: false,
   toastFn: toast
 };
 
-/* ===== 3. NAVEGACIÓN ENTRE PANTALLAS ===== */
+/* ===== 3. NAVEGACIÓN ENTRE PANTALLAS E HISTORIAL DEL NAVEGADOR ===== */
+
+let ultimoIntentoSalida = 0;
+
 /**
- * show(id) — Muestra la pantalla con el id indicado.
- * Usa GSAP para una transición de entrada suave.
+ * show(id) — Muestra la pantalla en el DOM con animación GSAP.
  * No hace nada si la pantalla ya está visible.
  */
 function show(id) {
   if (S.view === id) return;
   S.view = id;
   document.querySelectorAll(".screen").forEach(s => s.hidden = s.id !== id);
-  gsap.fromTo("#" + id, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .5, ease: "power2.out" });
+  gsap.fromTo("#" + id, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .4, ease: "power2.out" });
 }
+
+/**
+ * aplicarVista(screenId, extra) — Sincroniza el estado lógico y renderiza
+ * la sección correspondiente sin alterar la pila de historial.
+ */
+function aplicarVista(screenId, extra = {}) {
+  // Sincronizar flag de administrador
+  if (extra.fromAdmin !== undefined) {
+    S.fromAdmin = !!extra.fromAdmin;
+  } else if (screenId !== "s-ficha") {
+    S.fromAdmin = false;
+  }
+
+  if (screenId === "s-intro") {
+    show("s-intro");
+  } else if (screenId === "s-nombre") {
+    show("s-nombre");
+    if (S.nombre && $("#inNombre")) $("#inNombre").value = S.nombre;
+  } else if (screenId === "s-cocina") {
+    show("s-cocina");
+  } else if (screenId === "s-grupo") {
+    S.stage = "grupo";
+    const me = S.parts[S.me];
+    if (me) {
+      renderGrupo(me);
+    } else {
+      show("s-grupo");
+    }
+  } else if (screenId === "s-ruleta") {
+    S.stage = "ruleta";
+    const me = S.parts[S.me];
+    if (me) {
+      renderRuleta(me, S.grupos[me.grupo]);
+    } else {
+      show("s-ruleta");
+    }
+  } else if (screenId === "s-ficha") {
+    if (extra.fromAdmin && extra.pais) {
+      renderFicha({ pais: extra.pais, fromAdmin: true });
+    } else {
+      S.stage = "ficha";
+      const me = S.parts[S.me];
+      const res = me ? S.grupos[me.grupo] : (extra.pais ? { pais: extra.pais } : null);
+      if (res) {
+        renderFicha(res);
+      } else {
+        show("s-ficha");
+      }
+    }
+  } else if (screenId === "s-admin") {
+    if (extra.adminTab) S.adminTab = extra.adminTab;
+    show("s-admin");
+    renderAdmin();
+  }
+}
+
+/**
+ * navegar(screenId, extra, replace) — Registra la sección en el historial
+ * del navegador (window.history) y renderiza la pantalla correspondiente.
+ */
+function navegar(screenId, extra = {}, replace = false) {
+  const state = { screen: screenId, ...extra };
+  if (replace) {
+    history.replaceState(state, "", window.location.pathname);
+  } else {
+    history.pushState(state, "", window.location.pathname);
+  }
+  aplicarVista(screenId, extra);
+}
+
+/**
+ * retroceder(fallbackScreen, fallbackExtra) — Retrocede en el historial
+ * del navegador o utiliza el fallback si no hay estados previos.
+ */
+function retroceder(fallbackScreen = "s-intro", fallbackExtra = {}) {
+  if (window.history.state && !window.history.state.root) {
+    window.history.back();
+  } else {
+    navegar(fallbackScreen, fallbackExtra, true);
+  }
+}
+
+/**
+ * Listener de popstate — Controla el botón Atrás del navegador y
+ * gestos táctiles nativos en móviles (swipe-to-back de Android/iOS).
+ */
+window.addEventListener("popstate", e => {
+  // Guard: No interrumpir la ruleta mientras gira
+  if (S.anim) {
+    history.pushState({ screen: "s-ruleta", stage: "ruleta" }, "", window.location.pathname);
+    toast("⏳ Espera a que termine el giro de la ruleta...");
+    return;
+  }
+
+  const state = e.state;
+
+  // Prevención de salida accidental en la vista inicial
+  if (!state || state.root || state.screen === "s-intro") {
+    const ahora = Date.now();
+    if (ahora - ultimoIntentoSalida < 2500) {
+      // Segundo intento dentro del tiempo límite: permitir salida
+      return;
+    }
+    ultimoIntentoSalida = ahora;
+    // Retener el estado inicial en el historial
+    history.pushState({ screen: "s-intro", step: 1 }, "", window.location.pathname);
+    aplicarVista("s-intro");
+    toast("👋 Presiona atrás otra vez para salir");
+    return;
+  }
+
+  // Restaurar la sección correspondiente al estado del historial
+  aplicarVista(state.screen, state);
+});
 
 /* ===== 4. LISTENERS EN TIEMPO REAL (Firebase) ===== */
 // Cada listener actualiza el estado local y dispara render() automáticamente.
@@ -168,7 +285,7 @@ async function registrar(cocina) {
   S.parts = r.snapshot.val();
   S.me    = key;
   S.stage = "grupo";
-  render();
+  navegar("s-grupo", { stage: "grupo" }, true);
 }
 
 /* ===== 6. RENDER (enrutador de pantallas) ===== */
@@ -262,15 +379,7 @@ function renderFicha(res) {
   const btnBack = $("#btnVolverGrupoF");
   if (btnBack) {
     btnBack.textContent = esAdmin ? "← Volver al panel de administración" : "← Volver al grupo";
-    btnBack.onclick = () => {
-      if (esAdmin) {
-        show("s-admin");
-        renderAdmin();
-      } else {
-        S.stage = "grupo";
-        render();
-      }
-    };
+    btnBack.onclick = () => retroceder(esAdmin ? "s-admin" : "s-grupo");
   }
 
   // Links externos generados dinámicamente
@@ -584,29 +693,30 @@ function renderAdmin() {
 /* ===== 7. EVENTOS DEL DOM ===== */
 
 // ── Intro ──────────────────────────────────────────────────────
-$("#btnStart").onclick   = () => show("s-nombre");
+$("#btnStart").onclick   = () => navegar("s-nombre");
 $("#linkAdmin").onclick  = async () => {
   const pin = prompt("PIN de administrador");
   if (!pin) return;
   const ok = await verificarAdmin(pin.trim());
   if (ok) {
-    show("s-admin");
-    renderAdmin();
+    navegar("s-admin", { adminTab: "grupos" });
   } else {
     toast("PIN incorrecto");
   }
 };
 
 // ── Admin ──────────────────────────────────────────────────────
-$("#btnVolver").onclick  = () => { S.view = null; S.me ? render() : show("s-intro"); };
+$("#btnVolver").onclick  = () => retroceder("s-intro");
 
 // Event delegation para navegación y acciones del Admin (pestañas, filtros, ver ficha, steppers)
 document.addEventListener("click", e => {
   // Pestañas del Admin (Grupos vs Catálogo de Fichas)
   const tabBtn = e.target.closest(".adm-nav-tab");
   if (tabBtn) {
-    S.adminTab = tabBtn.dataset.admTab;
-    renderAdmin();
+    const nuevoTab = tabBtn.dataset.admTab;
+    if (nuevoTab !== S.adminTab) {
+      navegar("s-admin", { adminTab: nuevoTab });
+    }
     return;
   }
 
@@ -622,7 +732,7 @@ document.addEventListener("click", e => {
   const verPaisBtn = e.target.closest("[data-ver-pais]");
   if (verPaisBtn) {
     const paisId = verPaisBtn.dataset.verPais;
-    renderFicha({ pais: paisId, fromAdmin: true });
+    navegar("s-ficha", { fromAdmin: true, pais: paisId });
     return;
   }
 
@@ -656,28 +766,24 @@ $("#btnReset").onclick = async () => {
   }
 };
 
-
-
 // ── Flujo participante ─────────────────────────────────────────
-$("#btnRuleta").onclick  = () => { S.stage = "ruleta"; render(); };
+$("#btnRuleta").onclick  = () => navegar("s-ruleta", { stage: "ruleta" });
 $("#btnGirar").onclick   = () => girar();
-$("#btnFicha").onclick   = () => { S.stage = "ficha";  render(); };
+$("#btnFicha").onclick   = () => {
+  const me = S.parts[S.me];
+  const res = me ? S.grupos[me.grupo] : null;
+  navegar("s-ficha", { stage: "ficha", pais: res?.pais });
+};
 
 // ── Navegación: botones de retroceso ───────────────────────────
-$("#btnVolverInicio").onclick  = () => show("s-intro");
-$("#btnVolverNombre").onclick  = () => show("s-nombre");
+$("#btnVolverInicio").onclick  = () => retroceder("s-intro");
+$("#btnVolverNombre").onclick  = () => retroceder("s-nombre");
 $("#btnVolverGrupo").onclick   = () => {
-  if (S.anim) return;               // no salir durante la animación de la ruleta
-  S.stage = "grupo"; render();
+  if (S.anim) return; // no salir durante la animación de la ruleta
+  retroceder("s-grupo", { stage: "grupo" });
 };
 $("#btnVolverGrupoF").onclick  = () => {
-  if (S.fromAdmin) {
-    show("s-admin");
-    renderAdmin();
-  } else {
-    S.stage = "grupo";
-    render();
-  }
+  retroceder(S.fromAdmin ? "s-admin" : "s-grupo");
 };
 
 // Selección de experiencia en cocina (Sí / No)
@@ -712,14 +818,20 @@ $("#fNombre").onsubmit = async e => {
     S.parts[key] = snap.val();
     S.me         = key;
     S.stage      = "grupo";
-    render();
+    navegar("s-grupo", { stage: "grupo" });
   } else {
-    show("s-cocina");
+    navegar("s-cocina");
   }
 };
 
 /* ===== 8. INICIO DE LA APLICACIÓN ===== */
 buildRueda();
+
+// Inicialización de la pila de historial con retención contra salida accidental
+if (!history.state || !history.state.root) {
+  history.replaceState({ screen: "s-intro", root: true }, "", window.location.pathname);
+  history.pushState({ screen: "s-intro", step: 1 }, "", window.location.pathname);
+}
 
 // Animaciones de entrada en la pantalla de bienvenida
 gsap.from("#s-intro > *:not(.float)", {
@@ -731,4 +843,4 @@ gsap.to(".float", {
   y: -20, repeat: -1, yoyo: true, duration: 2, stagger: .3, ease: "sine.inOut"
 });
 
-show("s-intro");
+aplicarVista(history.state?.screen || "s-intro", history.state || {});
