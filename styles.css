@@ -324,36 +324,175 @@ li {
   color: var(--a);
 }
 
-/* ── Platos típicos ── */
+/* ── Platos típicos enriquecidos ── */
 .ficha-platos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: .7rem;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: .85rem;
 }
 
 .ficha-plato-card {
-  background: rgba(255,255,255,.04);
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .07);
   border-radius: 14px;
-  padding: 1rem .7rem;
-  text-align: center;
-  transition: transform .2s, background .2s;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform .25s ease, background .25s ease, border-color .25s ease;
   cursor: default;
 }
 
 .ficha-plato-card:hover {
-  transform: translateY(-3px);
-  background: rgba(255,255,255,.08);
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(242, 165, 65, .35);
+}
+
+.ficha-plato-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 130px;
+  overflow: hidden;
+  background: #15100e;
+}
+
+.ficha-plato-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .4s ease;
+  display: block;
+}
+
+.ficha-plato-card:hover .ficha-plato-img {
+  transform: scale(1.06);
+}
+
+.ficha-plato-badge {
+  position: absolute;
+  bottom: .45rem;
+  right: .45rem;
+  background: rgba(27, 15, 10, .78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 99px;
+  padding: .2rem .55rem;
+  font-size: 1.15rem;
+  border: 1px solid rgba(255, 255, 255, .15);
+  line-height: 1.2;
+}
+
+.ficha-plato-body {
+  padding: .85rem .95rem;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  flex: 1;
+}
+
+.ficha-plato-nombre {
+  font-weight: 700;
+  font-size: .95rem;
+  color: var(--ink);
+  margin: 0;
+}
+
+.ficha-plato-desc {
+  font-size: .78rem;
+  color: var(--mut);
+  line-height: 1.45;
+  margin: 0;
 }
 
 .ficha-plato-emoji {
   display: block;
   font-size: 2.6rem;
-  margin-bottom: .35rem;
+  margin: .8rem 0 .35rem;
+  text-align: center;
 }
 
-.ficha-plato-nombre {
-  font-weight: 600;
-  font-size: .88rem;
+/* ── Zonas y regiones emblemáticas ── */
+.ficha-zonas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: .85rem;
+}
+
+.ficha-zona-card {
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .07);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform .25s ease, background .25s ease, border-color .25s ease;
+}
+
+.ficha-zona-card:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, .08);
+  border-color: rgba(242, 165, 65, .35);
+}
+
+.ficha-zona-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  overflow: hidden;
+  background: #15100e;
+}
+
+.ficha-zona-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .4s ease;
+  display: block;
+}
+
+.ficha-zona-card:hover .ficha-zona-img {
+  transform: scale(1.06);
+}
+
+.ficha-zona-tag {
+  position: absolute;
+  top: .55rem;
+  left: .55rem;
+  background: rgba(27, 15, 10, .82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--a);
+  font-size: .7rem;
+  font-weight: 700;
+  padding: .25rem .6rem;
+  border-radius: 99px;
+  border: 1px solid rgba(242, 165, 65, .35);
+  max-width: 90%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ficha-zona-body {
+  padding: .85rem .95rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+  flex: 1;
+}
+
+.ficha-zona-nombre {
+  font-weight: 700;
+  font-size: .98rem;
+  color: var(--ink);
+  margin: 0;
+}
+
+.ficha-zona-desc {
+  font-size: .8rem;
+  color: var(--mut);
+  line-height: 1.5;
+  margin: 0;
 }
 
 /* ── Ingredientes ── */
@@ -839,3 +978,310 @@ li {
   color: var(--mut);
 }
 
+/* Header box con pestañas */
+.adm-header-box {
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+  align-items: center;
+}
+
+/* Pestañas del Admin */
+.adm-nav-tabs {
+  display: flex;
+  gap: .5rem;
+  width: 100%;
+  margin-top: .4rem;
+  background: rgba(0, 0, 0, .25);
+  padding: .3rem;
+  border-radius: 99px;
+  border: 1px solid rgba(255, 255, 255, .08);
+}
+
+.adm-nav-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  background: transparent;
+  color: var(--mut);
+  font-size: .85rem;
+  font-weight: 700;
+  padding: .6rem 1rem;
+  border-radius: 99px;
+  transition: all .2s ease;
+  touch-action: manipulation;
+  cursor: pointer;
+  border: none;
+}
+
+.adm-nav-tab:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, .05);
+}
+
+.adm-nav-tab.active {
+  background: linear-gradient(135deg, var(--a), var(--b));
+  color: #1b0f0a;
+  box-shadow: 0 4px 15px rgba(242, 165, 65, .3);
+}
+
+.adm-tab-badge {
+  background: rgba(0, 0, 0, .2);
+  color: inherit;
+  font-size: .72rem;
+  padding: .15rem .45rem;
+  border-radius: 99px;
+  font-weight: 800;
+}
+
+.adm-tab-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+/* Filtros de continentes */
+.adm-paises-filtro-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .45rem;
+  max-width: 800px;
+  margin-bottom: .2rem;
+}
+
+.adm-filtro-btn {
+  background: rgba(255, 255, 255, .05);
+  color: var(--mut);
+  border: 1px solid rgba(255, 255, 255, .08);
+  font-size: .8rem;
+  font-weight: 600;
+  padding: .4rem .9rem;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all .2s ease;
+  touch-action: manipulation;
+}
+
+.adm-filtro-btn:hover {
+  background: rgba(255, 255, 255, .1);
+  color: var(--ink);
+}
+
+.adm-filtro-btn.active {
+  background: rgba(242, 165, 65, .18);
+  color: var(--a);
+  border-color: rgba(242, 165, 65, .5);
+}
+
+/* Grid de países para admin */
+.adm-paises-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+/* Tarjeta individual de país en admin */
+.adm-pais-card {
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+  text-align: left;
+}
+
+.adm-pais-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, .4);
+  border-color: rgba(242, 165, 65, .35);
+}
+
+.adm-pais-img-wrap {
+  position: relative;
+  width: 100%;
+  height: 130px;
+  background: #140d0a;
+  overflow: hidden;
+}
+
+.adm-pais-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .35s ease;
+  display: block;
+}
+
+.adm-pais-card:hover .adm-pais-img {
+  transform: scale(1.06);
+}
+
+.adm-pais-flag-float {
+  position: absolute;
+  top: .6rem;
+  left: .6rem;
+  width: 38px;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .5);
+  border: 1px solid rgba(255, 255, 255, .3);
+}
+
+.adm-pais-con-pill {
+  position: absolute;
+  top: .6rem;
+  right: .6rem;
+  background: rgba(27, 15, 10, .82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--a);
+  font-size: .68rem;
+  font-weight: 700;
+  padding: .2rem .55rem;
+  border-radius: 99px;
+  border: 1px solid rgba(242, 165, 65, .3);
+}
+
+.adm-pais-body {
+  padding: .9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  flex: 1;
+}
+
+.adm-pais-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem;
+}
+
+.adm-pais-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--ink);
+  margin: 0;
+}
+
+.adm-pais-cap {
+  font-size: .75rem;
+  color: var(--mut);
+  white-space: nowrap;
+}
+
+.adm-pais-oficial {
+  font-size: .75rem;
+  color: var(--mut);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Status pill de país */
+.adm-pais-status-pill {
+  font-size: .72rem;
+  font-weight: 600;
+  padding: .35rem .65rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+
+.status-asignado {
+  background: rgba(76, 175, 80, .14);
+  color: #a5d6a7;
+  border: 1px solid rgba(76, 175, 80, .3);
+}
+
+.status-libre {
+  background: rgba(255, 255, 255, .05);
+  color: var(--mut);
+  border: 1px solid rgba(255, 255, 255, .08);
+}
+
+/* Platos tags en tarjeta */
+.adm-pais-platos-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin: .2rem 0;
+}
+
+.adm-plato-mini-tag {
+  background: rgba(255, 255, 255, .04);
+  font-size: .7rem;
+  color: var(--ink);
+  padding: .2rem .5rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, .06);
+}
+
+/* Botón ver ficha */
+.adm-btn-ver-pais {
+  margin-top: auto;
+  width: 100%;
+  background: rgba(242, 165, 65, .12);
+  color: var(--a);
+  border: 1px solid rgba(242, 165, 65, .35);
+  font-size: .82rem;
+  font-weight: 700;
+  padding: .55rem .8rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all .2s ease;
+  touch-action: manipulation;
+  text-align: center;
+}
+
+.adm-btn-ver-pais:hover {
+  background: linear-gradient(135deg, var(--a), var(--b));
+  color: #1b0f0a;
+  box-shadow: 0 4px 12px rgba(242, 165, 65, .35);
+  border-color: transparent;
+}
+
+/* Botoncito para ver ficha desde tarjeta de grupo */
+.adm-btn-card-ficha {
+  margin-left: auto;
+  background: rgba(242, 165, 65, .15);
+  border: 1px solid rgba(242, 165, 65, .3);
+  color: var(--a);
+  font-size: .75rem;
+  font-weight: 700;
+  padding: .2rem .55rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s ease;
+  touch-action: manipulation;
+}
+
+.adm-btn-card-ficha:hover {
+  background: var(--a);
+  color: #1b0f0a;
+}
+
+/* ===== 15. Responsive Ficha (Platos y Zonas) ===== */
+@media (max-width: 480px) {
+  .ficha-platos,
+  .ficha-zonas {
+    grid-template-columns: 1fr;
+  }
+  .ficha-plato-img-wrap {
+    height: 140px;
+  }
+  .ficha-zona-img-wrap {
+    height: 150px;
+  }
+}

@@ -241,10 +241,37 @@ function renderFicha(res) {
   show("s-ficha");
 
   const p = PAISES.find(x => x.id === res.pais);
-  const g = S.parts[S.me].grupo;
+  const esAdmin = !!(res && res.fromAdmin);
 
-  // Miembros del equipo
-  const miembros = Object.values(S.parts).filter(m => m.grupo === g);
+  // Determinar grupo y miembros
+  let g = null;
+  let miembros = [];
+
+  if (esAdmin) {
+    const asignado = Object.entries(S.grupos || {}).find(([letra, d]) => d && d.pais === p.id);
+    if (asignado) {
+      g = asignado[0];
+      miembros = Object.values(S.parts || {}).filter(m => m.grupo === g);
+    }
+  } else if (S.me && S.parts && S.parts[S.me]) {
+    g = S.parts[S.me].grupo;
+    miembros = Object.values(S.parts || {}).filter(m => m.grupo === g);
+  }
+
+  // Configurar botón de retroceso según origen
+  const btnBack = $("#btnVolverGrupoF");
+  if (btnBack) {
+    btnBack.textContent = esAdmin ? "← Volver al panel de administración" : "← Volver al grupo";
+    btnBack.onclick = () => {
+      if (esAdmin) {
+        show("s-admin");
+        renderAdmin();
+      } else {
+        S.stage = "grupo";
+        render();
+      }
+    };
+  }
 
   // Links externos generados dinámicamente
   const enlaces = [
@@ -262,7 +289,10 @@ function renderFicha(res) {
         <img class="ficha-bandera" src="https://flagcdn.com/w160/${p.iso}.png" alt="Bandera de ${p.n}">
         <h1 class="ficha-titulo">${p.n}</h1>
         <p class="ficha-oficial">${p.of}</p>
-        <span class="tag ficha-grupo">Grupo ${g}</span>
+        ${g
+          ? `<span class="tag ficha-grupo">Grupo ${g}</span>`
+          : `<span class="tag ficha-grupo" style="background:rgba(242,165,65,.18);border:1px solid rgba(242,165,65,.35)">🌍 Catálogo general</span>`
+        }
       </div>
     </div>
 
@@ -290,39 +320,81 @@ function renderFicha(res) {
       </div>
     </div>
 
-    <!-- ═══ Tu equipo ═══ -->
+    <!-- ═══ Equipo / Asignación ═══ -->
     <div class="ficha-seccion">
-      <h2 class="ficha-seccion-titulo">👥 Tu equipo — Grupo ${g}</h2>
-      <p class="ficha-equipo-sub">${miembros.length} integrantes cocinando ${p.n}</p>
-      <div class="ficha-equipo">
-        ${miembros.map(m => {
-          const esYo = slug(m.nombre) === S.me;
-          return `
-            <div class="ficha-miembro${esYo ? ' ficha-miembro-yo' : ''}">
-              <span class="ficha-miembro-avatar">${m.nombre.charAt(0).toUpperCase()}</span>
-              <div class="ficha-miembro-info">
-                <strong>${esc(m.nombre)}${esYo ? ' (Tú)' : ''}</strong>
-                <span class="tag">${m.cocina === "si" ? "👨‍🍳 Con experiencia" : "🌱 Novato"}</span>
-              </div>
-            </div>`;
-        }).join("")}
-      </div>
+      ${g ? `
+        <h2 class="ficha-seccion-titulo">${esAdmin ? `👥 Grupo asignado — Grupo ${g}` : `👥 Tu equipo — Grupo ${g}`}</h2>
+        <p class="ficha-equipo-sub">${miembros.length} integrantes cocinando ${p.n}</p>
+        <div class="ficha-equipo">
+          ${miembros.map(m => {
+            const esYo = slug(m.nombre) === S.me;
+            return `
+              <div class="ficha-miembro${esYo ? ' ficha-miembro-yo' : ''}">
+                <span class="ficha-miembro-avatar">${m.nombre.charAt(0).toUpperCase()}</span>
+                <div class="ficha-miembro-info">
+                  <strong>${esc(m.nombre)}${esYo ? ' (Tú)' : ''}</strong>
+                  <span class="tag">${m.cocina === "si" ? "👨‍🍳 Con experiencia" : "🌱 Novato"}</span>
+                </div>
+              </div>`;
+          }).join("")}
+        </div>
+      ` : `
+        <h2 class="ficha-seccion-titulo">👥 Estado de asignación</h2>
+        <p class="ficha-equipo-sub">Este país aún no ha sido asignado a ningún grupo en el sorteo de la ruleta.</p>
+        <div style="background:rgba(255,255,255,.04);border-radius:12px;padding:.9rem 1.2rem;display:flex;align-items:center;gap:.7rem">
+          <span style="font-size:1.6rem">🎲</span>
+          <div>
+            <strong style="color:var(--a);display:block;font-size:.9rem">Disponible para ser seleccionado</strong>
+            <small style="color:var(--mut);font-size:.78rem">Aparecerá en el sorteo de ruleta para los próximos grupos participantes.</small>
+          </div>
+        </div>
+      `}
     </div>
 
     <!-- ═══ Platos típicos ═══ -->
     <div class="ficha-seccion">
       <h2 class="ficha-seccion-titulo">🍽️ Platos típicos</h2>
       <div class="ficha-platos">
-        ${p.pl.map(x => {
+        ${(p.platos || p.pl.map(x => {
           const [emoji, ...nombre] = x.split(" ");
-          return `
-            <div class="ficha-plato-card">
-              <span class="ficha-plato-emoji">${emoji}</span>
-              <span class="ficha-plato-nombre">${nombre.join(" ")}</span>
-            </div>`;
-        }).join("")}
+          return { emoji, nombre: nombre.join(" "), desc: "", img: "" };
+        })).map(plato => `
+          <div class="ficha-plato-card">
+            ${plato.img ? `
+              <div class="ficha-plato-img-wrap">
+                <img class="ficha-plato-img" src="${plato.img}" alt="${esc(plato.nombre)}" loading="lazy" onerror="this.parentElement.style.display='none'">
+                <span class="ficha-plato-badge">${plato.emoji || '🍽️'}</span>
+              </div>
+            ` : `<span class="ficha-plato-emoji">${plato.emoji || '🍽️'}</span>`}
+            <div class="ficha-plato-body">
+              <h3 class="ficha-plato-nombre">${esc(plato.nombre)}</h3>
+              ${plato.desc ? `<p class="ficha-plato-desc">${esc(plato.desc)}</p>` : ''}
+            </div>
+          </div>
+        `).join("")}
       </div>
     </div>
+
+    <!-- ═══ Zonas de mayor relevancia ═══ -->
+    ${p.zonas && p.zonas.length ? `
+      <div class="ficha-seccion">
+        <h2 class="ficha-seccion-titulo">📍 Zonas y regiones de mayor relevancia</h2>
+        <div class="ficha-zonas">
+          ${p.zonas.map(z => `
+            <div class="ficha-zona-card">
+              <div class="ficha-zona-img-wrap">
+                <img class="ficha-zona-img" src="${z.img}" alt="${esc(z.nombre)}" loading="lazy" onerror="this.parentElement.style.display='none'">
+                <span class="ficha-zona-tag">${esc(z.tipo)}</span>
+              </div>
+              <div class="ficha-zona-body">
+                <h3 class="ficha-zona-nombre">${esc(z.nombre)}</h3>
+                <p class="ficha-zona-desc">${esc(z.desc)}</p>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    ` : ''}
 
     <!-- ═══ Ingredientes estrella ═══ -->
     <div class="ficha-seccion">
@@ -386,59 +458,127 @@ function renderFicha(res) {
   confetti({ particleCount: 80, spread: 70, origin: { y: .2 } });
 }
 
-/** renderAdmin() — Panel de administración */
+/** renderAdmin() — Panel de administración con pestañas de grupos y catálogo de países */
 function renderAdmin() {
   const ps  = Object.values(S.parts);
   const total = ps.length;
   const cupoTotal = S.numGrupos * S.maxPorGrupo;
 
+  // Estado de pestañas y filtros por defecto
+  S.adminTab    = S.adminTab || "grupos";
+  S.adminFiltro = S.adminFiltro || "todos";
+
   // Resumen superior
   $(".adm-resumen").textContent = `${total} / ${cupoTotal} participantes registrados`;
 
-  // Valores en los steppers (sin modificarlos si el admin los está pulsando rápido)
-  $("#admNumGrupos").textContent   = S.numGrupos;
-  $("#admMaxPorGrupo").textContent = S.maxPorGrupo;
-  $("#admCupoCalc").textContent    =
-    `Cupo total calculado: ${S.numGrupos} grupos × ${S.maxPorGrupo} integrantes = ${cupoTotal} personas`;
+  // Actualizar clases activas en botones de pestañas y visibilidad de paneles
+  document.querySelectorAll(".adm-nav-tab").forEach(tab => {
+    tab.classList.toggle("active", tab.dataset.admTab === S.adminTab);
+  });
+  const secGrupos = $("#secAdmGrupos");
+  const secPaises = $("#secAdmPaises");
+  if (secGrupos) secGrupos.hidden = S.adminTab !== "grupos";
+  if (secPaises) secPaises.hidden = S.adminTab !== "paises";
 
-  // Grid de grupos con diseño enriquecido
-  $("#admGrid").innerHTML = S.letras.map(l => {
-    const miembros  = ps.filter(p => p.grupo === l);
-    const expertos  = miembros.filter(p => p.cocina === "si").length;
-    const novatos   = miembros.length - expertos;
-    const sorteo    = S.grupos[l];
-    const lleno     = miembros.length >= S.maxPorGrupo;
-    const pais      = sorteo ? PAISES.find(p => p.id === sorteo.pais) : null;
+  // ── Pestaña 1: Grupos y Configuración ──
+  if (S.adminTab === "grupos") {
+    $("#admNumGrupos").textContent   = S.numGrupos;
+    $("#admMaxPorGrupo").textContent = S.maxPorGrupo;
+    $("#admCupoCalc").textContent    =
+      `Cupo total calculado: ${S.numGrupos} grupos × ${S.maxPorGrupo} integrantes = ${cupoTotal} personas`;
 
-    return `
-      <div class="adm-card">
-        <div class="adm-card-header">
-          <span class="adm-card-letra">${l}</span>
-          <span class="adm-card-badge ${lleno ? 'adm-badge-full' : 'adm-badge-open'}">
-            ${lleno ? 'Completo' : `${miembros.length}/${S.maxPorGrupo}`}
-          </span>
-        </div>
-        <div class="adm-card-stats">
-          <span>👨‍🍳 ${expertos} exp.</span>
-          <span>🌱 ${novatos} nov.</span>
-        </div>
-        <ul class="adm-card-lista">
-          ${miembros.length
-            ? miembros.map(m =>
-                `<li><span class="adm-miembro-dot">●</span>${esc(m.nombre)}</li>`
-              ).join("")
-            : '<li class="adm-card-vacio">Sin integrantes</li>'
-          }
-        </ul>
-        <div class="adm-card-footer">
-          ${pais
-            ? `<img src="https://flagcdn.com/w40/${pais.iso}.png" class="adm-pais-flag" alt="">
-               <span class="adm-pais-nombre">${pais.n}</span>`
-            : '<span class="adm-sin-sorteo">⏳ Sin sorteo</span>'
-          }
-        </div>
-      </div>`;
-  }).join("");
+    // Grid de grupos con diseño enriquecido
+    $("#admGrid").innerHTML = S.letras.map(l => {
+      const miembros  = ps.filter(p => p.grupo === l);
+      const expertos  = miembros.filter(p => p.cocina === "si").length;
+      const novatos   = miembros.length - expertos;
+      const sorteo    = S.grupos[l];
+      const lleno     = miembros.length >= S.maxPorGrupo;
+      const pais      = sorteo ? PAISES.find(p => p.id === sorteo.pais) : null;
+
+      return `
+        <div class="adm-card">
+          <div class="adm-card-header">
+            <span class="adm-card-letra">${l}</span>
+            <span class="adm-card-badge ${lleno ? 'adm-badge-full' : 'adm-badge-open'}">
+              ${lleno ? 'Completo' : `${miembros.length}/${S.maxPorGrupo}`}
+            </span>
+          </div>
+          <div class="adm-card-stats">
+            <span>👨‍🍳 ${expertos} exp.</span>
+            <span>🌱 ${novatos} nov.</span>
+          </div>
+          <ul class="adm-card-lista">
+            ${miembros.length
+              ? miembros.map(m =>
+                  `<li><span class="adm-miembro-dot">●</span>${esc(m.nombre)}</li>`
+                ).join("")
+              : '<li class="adm-card-vacio">Sin integrantes</li>'
+            }
+          </ul>
+          <div class="adm-card-footer">
+            ${pais
+              ? `<img src="https://flagcdn.com/w40/${pais.iso}.png" class="adm-pais-flag" alt="">
+                 <span class="adm-pais-nombre">${pais.n}</span>
+                 <button class="adm-btn-card-ficha" data-ver-pais="${pais.id}" title="Ver ficha de ${pais.n}">Ficha ↗</button>`
+              : '<span class="adm-sin-sorteo">⏳ Sin sorteo</span>'
+            }
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  // ── Pestaña 2: Catálogo de Fichas de Países ──
+  if (S.adminTab === "paises") {
+    // Actualizar botones de filtro
+    document.querySelectorAll(".adm-filtro-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.filtro === S.adminFiltro);
+    });
+
+    const filtrados = PAISES.filter(p => {
+      if (S.adminFiltro === "todos") return true;
+      return p.con.toLowerCase().includes(S.adminFiltro.toLowerCase());
+    });
+
+    $("#admPaisesGrid").innerHTML = filtrados.map(p => {
+      const asignado = Object.entries(S.grupos || {}).find(([letra, d]) => d && d.pais === p.id);
+      const letraGrupo = asignado ? asignado[0] : null;
+      const cantMiembros = letraGrupo ? Object.values(S.parts || {}).filter(m => m.grupo === letraGrupo).length : 0;
+
+      return `
+        <div class="adm-pais-card">
+          <div class="adm-pais-img-wrap">
+            <img class="adm-pais-img" src="${p.img}" alt="${esc(p.n)}" loading="lazy" onerror="this.style.opacity='0.4'">
+            <img class="adm-pais-flag-float" src="https://flagcdn.com/w80/${p.iso}.png" alt="Bandera de ${p.n}">
+            <span class="adm-pais-con-pill">${esc(p.con)}</span>
+          </div>
+          <div class="adm-pais-body">
+            <div class="adm-pais-title-row">
+              <h3 class="adm-pais-name">${esc(p.n)}</h3>
+              <span class="adm-pais-cap">🏛️ ${esc(p.cap)}</span>
+            </div>
+            <p class="adm-pais-oficial">${esc(p.of)}</p>
+
+            <div class="adm-pais-status-pill ${letraGrupo ? 'status-asignado' : 'status-libre'}">
+              ${letraGrupo
+                ? `<span>🟢 Asignado a <strong>Grupo ${letraGrupo}</strong> (${cantMiembros} miembros)</span>`
+                : `<span>⚪ Disponible en ruleta</span>`
+              }
+            </div>
+
+            <div class="adm-pais-platos-mini">
+              ${(p.platos || []).map(plato => `
+                <span class="adm-plato-mini-tag">${plato.emoji || '🍽️'} ${esc(plato.nombre)}</span>
+              `).join("")}
+            </div>
+
+            <button class="adm-btn-ver-pais" data-ver-pais="${p.id}">
+              📖 Ver ficha completa
+            </button>
+          </div>
+        </div>`;
+    }).join("");
+  }
 }
 
 /* ===== 7. EVENTOS DEL DOM ===== */
@@ -460,9 +600,33 @@ $("#linkAdmin").onclick  = async () => {
 // ── Admin ──────────────────────────────────────────────────────
 $("#btnVolver").onclick  = () => { S.view = null; S.me ? render() : show("s-intro"); };
 
-// Steppers de configuración — event delegation (evita hit-test inválido en
-// Chrome/Edge Android cuando el panel pasa de hidden a visible con GSAP)
+// Event delegation para navegación y acciones del Admin (pestañas, filtros, ver ficha, steppers)
 document.addEventListener("click", e => {
+  // Pestañas del Admin (Grupos vs Catálogo de Fichas)
+  const tabBtn = e.target.closest(".adm-nav-tab");
+  if (tabBtn) {
+    S.adminTab = tabBtn.dataset.admTab;
+    renderAdmin();
+    return;
+  }
+
+  // Filtros de continentes
+  const filtroBtn = e.target.closest(".adm-filtro-btn");
+  if (filtroBtn) {
+    S.adminFiltro = filtroBtn.dataset.filtro;
+    renderAdmin();
+    return;
+  }
+
+  // Ver ficha gastronómica de un país (desde catálogo o desde tarjeta de grupo)
+  const verPaisBtn = e.target.closest("[data-ver-pais]");
+  if (verPaisBtn) {
+    const paisId = verPaisBtn.dataset.verPais;
+    renderFicha({ pais: paisId, fromAdmin: true });
+    return;
+  }
+
+  // Steppers de configuración
   const btn = e.target.closest(".adm-stepper");
   if (!btn) return;
 
@@ -506,7 +670,15 @@ $("#btnVolverGrupo").onclick   = () => {
   if (S.anim) return;               // no salir durante la animación de la ruleta
   S.stage = "grupo"; render();
 };
-$("#btnVolverGrupoF").onclick  = () => { S.stage = "grupo"; render(); };
+$("#btnVolverGrupoF").onclick  = () => {
+  if (S.fromAdmin) {
+    show("s-admin");
+    renderAdmin();
+  } else {
+    S.stage = "grupo";
+    render();
+  }
+};
 
 // Selección de experiencia en cocina (Sí / No)
 // Delegación de eventos: resuelve fallo de tap en Chrome/Edge Android

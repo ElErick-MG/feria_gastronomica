@@ -86,49 +86,77 @@
 
   <!-- Panel de Administración -->
   <section id="s-admin" class="screen" hidden>
-    <div class="box adm-config-box">
+    <div class="box adm-header-box">
       <h2>Panel de administración</h2>
       <p id="admResumen" class="adm-resumen"></p>
 
-      <!-- Fila 1: Grupos activos -->
-      <div class="adm-cfg-row">
-        <div class="adm-cfg-label">
-          <span class="adm-cfg-icon">🏷️</span>
-          <div>
-            <strong>Grupos activos</strong>
-            <small>De A hasta la letra correspondiente (máx. 10)</small>
-          </div>
-        </div>
-        <div class="adm-cfg-ctrl">
-          <button class="adm-stepper" id="btnGruposMenos" aria-label="Reducir grupos">−</button>
-          <span id="admNumGrupos" class="adm-stepper-val">10</span>
-          <button class="adm-stepper" id="btnGruposMas" aria-label="Aumentar grupos">+</button>
-        </div>
+      <!-- Pestañas de navegación del Admin -->
+      <div class="adm-nav-tabs">
+        <button class="adm-nav-tab active" id="tabAdmGrupos" data-adm-tab="grupos">
+          <span>📊</span> Grupos y Configuración
+        </button>
+        <button class="adm-nav-tab" id="tabAdmPaises" data-adm-tab="paises">
+          <span>🌍</span> Fichas de Países <span class="adm-tab-badge">10</span>
+        </button>
       </div>
-
-      <!-- Fila 2: Integrantes por grupo -->
-      <div class="adm-cfg-row">
-        <div class="adm-cfg-label">
-          <span class="adm-cfg-icon">👥</span>
-          <div>
-            <strong>Integrantes por grupo</strong>
-            <small>Aplica a todos los grupos por igual</small>
-          </div>
-        </div>
-        <div class="adm-cfg-ctrl">
-          <button class="adm-stepper" id="btnMaxMenos" aria-label="Reducir integrantes">−</button>
-          <span id="admMaxPorGrupo" class="adm-stepper-val">3</span>
-          <button class="adm-stepper" id="btnMaxMas" aria-label="Aumentar integrantes">+</button>
-        </div>
-      </div>
-
-      <!-- Cupo total calculado -->
-      <p id="admCupoCalc" class="adm-cupo-calc"></p>
     </div>
 
-    <div id="admGrid" class="adm-grid-custom" style="max-width:860px"></div>
+    <!-- Pestaña 1: Grupos y Configuración -->
+    <div id="secAdmGrupos" class="adm-tab-panel">
+      <div class="box adm-config-box">
+        <!-- Fila 1: Grupos activos -->
+        <div class="adm-cfg-row">
+          <div class="adm-cfg-label">
+            <span class="adm-cfg-icon">🏷️</span>
+            <div>
+              <strong>Grupos activos</strong>
+              <small>De A hasta la letra correspondiente (máx. 10)</small>
+            </div>
+          </div>
+          <div class="adm-cfg-ctrl">
+            <button class="adm-stepper" id="btnGruposMenos" aria-label="Reducir grupos">−</button>
+            <span id="admNumGrupos" class="adm-stepper-val">10</span>
+            <button class="adm-stepper" id="btnGruposMas" aria-label="Aumentar grupos">+</button>
+          </div>
+        </div>
 
-    <div class="row">
+        <!-- Fila 2: Integrantes por grupo -->
+        <div class="adm-cfg-row">
+          <div class="adm-cfg-label">
+            <span class="adm-cfg-icon">👥</span>
+            <div>
+              <strong>Integrantes por grupo</strong>
+              <small>Aplica a todos los grupos por igual</small>
+            </div>
+          </div>
+          <div class="adm-cfg-ctrl">
+            <button class="adm-stepper" id="btnMaxMenos" aria-label="Reducir integrantes">−</button>
+            <span id="admMaxPorGrupo" class="adm-stepper-val">3</span>
+            <button class="adm-stepper" id="btnMaxMas" aria-label="Aumentar integrantes">+</button>
+          </div>
+        </div>
+
+        <!-- Cupo total calculado -->
+        <p id="admCupoCalc" class="adm-cupo-calc"></p>
+      </div>
+
+      <div id="admGrid" class="adm-grid-custom" style="max-width:860px"></div>
+    </div>
+
+    <!-- Pestaña 2: Catálogo de Fichas de Países -->
+    <div id="secAdmPaises" class="adm-tab-panel" hidden>
+      <div class="adm-paises-filtro-bar">
+        <button class="adm-filtro-btn active" data-filtro="todos">Todos (10)</button>
+        <button class="adm-filtro-btn" data-filtro="América">América</button>
+        <button class="adm-filtro-btn" data-filtro="Europa">Europa</button>
+        <button class="adm-filtro-btn" data-filtro="Asia">Asia</button>
+        <button class="adm-filtro-btn" data-filtro="África">África</button>
+      </div>
+
+      <div id="admPaisesGrid" class="adm-paises-grid" style="max-width:880px"></div>
+    </div>
+
+    <div class="row adm-bottom-row">
       <button id="btnVolver">Volver</button>
       <button id="btnReset" style="background:#7a2a1a;color:#fff">Reiniciar evento</button>
     </div>

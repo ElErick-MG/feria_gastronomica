@@ -36,13 +36,15 @@ Aplicación web interactiva y multidispositivo para gestionar **eventos gastron�
 │  4. 👥 Asignación     →  Algoritmo balanceado → Grupo A–J activos │
 │  5. ⏳ Sala de Espera →  Barra en tiempo real · lista de tu equipo│
 │  6. 🎡 Ruleta         →  Giro grupal · Animación GSAP · Confetti │
-│  7. 🌍 Ficha País     →  Historia, platos, ingredientes, equipo,  │
-│                          links externos y tip para la feria      │
+│  7. 🌍 Ficha País     →  Fotos de platos y regiones emblemáticas, │
+│                          ingredientes, equipo, tips y links      │
+│  8. 🛠️ Modo Admin      →  Pestañas: Grupos y Catálogo de Fichas    │
+│                          de los 10 países con filtros en vivo    │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-> 🔙 La navegación incluye botones de retroceso en las pantallas que lo requieren (Identificación, Cocina, Ruleta y Ficha).
+> 🔙 La navegación incluye botones de retroceso contextuales en las pantallas que lo requieren (Identificación, Cocina, Ruleta y Ficha tanto para participantes como para administradores).
 
 ---
 

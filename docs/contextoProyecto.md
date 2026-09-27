@@ -57,18 +57,19 @@ feria_gastronomica/
    * Exporta instancias de `db`, `auth` y los métodos necesarios (`ref`, `onValue`, `get`, `set`, `remove`, `runTransaction`, `signInAnonymously`).
 2. **[js/data.js](file:///d:/levantamientoProyectos/feria_gastronomica/js/data.js):**
    * Arreglo inmutable `PAISES` con 10 elementos.
-   * Cada objeto contiene: `id`, `iso` (para banderas en `flagcdn.com`), `n` (nombre), `of` (nombre oficial), `cap` (capital), `con` (continente), `lang` (idioma), `mon` (moneda), `pl` (platos típicos con emoji), `ing` (ingredientes estrella), `h` (historia gastronómica), `k` (características), `p` (población), `d` (dato curioso), `tip` (consejo para la feria), `img` (URL Unsplash del plato icónico) y `wiki` (slug de Wikipedia de la gastronomía del país).
+   * Cada objeto contiene: `id`, `iso` (para banderas en `flagcdn.com`), `n` (nombre), `of` (nombre oficial), `cap` (capital), `con` (continente), `lang` (idioma), `mon` (moneda), `pl` (platos típicos con emoji), `platos` (platos típicos con fotos web Unsplash, emoji y descripción), `zonas` (regiones de mayor relevancia cultural y culinaria con fotos web, tipo y descripción), `ing` (ingredientes estrella), `h` (historia gastronómica), `k` (características), `p` (población), `d` (dato curioso), `tip` (consejo para la feria), `img` (URL Unsplash representativa verificada) y `wiki` (slug de Wikipedia).
+   * 100% de imágenes verificadas con HTTP 200 OK (imágenes de Francia y Marruecos corregidas).
 3. **[js/ruleta.js](file:///d:/levantamientoProyectos/feria_gastronomica/js/ruleta.js):**
    * `buildRueda()`: Dibuja un `<svg>` con sectores angulares (`360 / PAISES.length`), cálculo trigonométrico (`Math.cos`, `Math.sin`), etiquetas de texto orientadas y banderas.
    * `animar(res, me, onDone)`: Ejecuta animación GSAP de 6 vueltas completas + sector específico con inercia, dispara confeti y muestra mensaje contextual.
    * `girar()`: Transacción atómica en Firebase (`grupos`) que garantiza que un solo miembro fije el país de su grupo, excluyendo países ya tomados.
 4. **[js/app.js](file:///d:/levantamientoProyectos/feria_gastronomica/js/app.js):**
-   * Mantiene el estado reactivo `S` con propiedades: `numGrupos` (1–10), `maxPorGrupo` (global), `cupo` (= numGrupos × maxPorGrupo) y `letras` (getter que devuelve las letras activas A–J según `numGrupos`).
+   * Mantiene el estado reactivo `S` con propiedades: `numGrupos` (1–10), `maxPorGrupo` (global), `cupo` (= numGrupos × maxPorGrupo), `letras` (getter A–J), `adminTab` ("grupos" | "paises") y `adminFiltro` ("todos" | continente).
    * Registra listeners en tiempo real (`onValue`) para `config/numGrupos`, `config/maxPorGrupo`, `participantes` y `grupos`.
    * Ejecuta el **algoritmo de balanceo** dinámico de equipos al registrar un participante, respetando el límite `maxPorGrupo` por grupo.
-   * Controla la navegación entre vistas mediante la función `show(id)`, el enrutador `render()` y **botones de retroceso** (← Volver) en pantallas s-nombre, s-cocina, s-ruleta y s-ficha.
+   * Controla la navegación entre vistas mediante la función `show(id)`, el enrutador `render()` y **botones de retroceso** contextuales.
    * Administra la autenticación anónima y verificación segura del PIN de administrador.
-   * Usa **event delegation** en lugar de `onclick` directo para botones críticos (selección cocina, steppers admin) — necesario para evitar fallos de hit-test en Chrome/Edge Android con GSAP.
+   * Usa **event delegation** en lugar de `onclick` directo para botones críticos (selección cocina, steppers admin, tabs admin, filtros de continente y botones de ver ficha) — necesario para evitar fallos de hit-test en Chrome/Edge Android con GSAP.
 
 ---
 
@@ -84,11 +85,11 @@ La aplicación funciona como una SPA (Single Page Application) controlada por la
 │     │                           │                            │         │
 │     │ (Admin PIN)               │ (Si ya existe)             │ (Sí/No) │
 │     ▼                           ▼                            ▼         │
-│  [s-admin]                   [s-grupo] <─────────────────────┘         │
-│                                 │                                      │
-│                                 │ (Cupo lleno)                         │
-│                                 ▼                                      │
-│                             [s-ruleta] ──(Girar/Resultado)──> [s-ficha]│
+│  [s-admin] ──(Ver Ficha)─────> [s-ficha] <───────────────────┘         │
+│     │ (Pestañas: Grupos/Países) ▲  │                                   │
+│     │                           │  │ (Cupo lleno)                      │
+│     │                           │  ▼                                   │
+│     └───────────────────────────┴ [s-ruleta] ──(Girar/Resultado)       │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -102,20 +103,20 @@ La aplicación funciona como una SPA (Single Page Application) controlada por la
    * Barra de progreso animada indicando `inscritos / cupo`.
    * Botón de ruleta deshabilitado hasta que se complete el cupo configurado.
 5. **`s-ruleta` (Sorteo Sincronizado):** Ruleta SVG interactiva. Cualquier miembro del grupo puede girar; el resultado se sincroniza en Firebase y dispara la animación simultáneamente en los dispositivos de todos los integrantes.
-6. **`s-ficha` (Resultado Gastronómico — versión enriquecida):** Ficha técnica/didáctica estilo revista con 8 secciones:
-   - Hero con imagen del plato, bandera, nombre del país y grupo
-   - 5 datos rápidos (capital, continente, idioma, moneda, población)
-   - 👥 **Tu equipo** — lista de todos los integrantes del grupo con avatar (inicial), tag de experiencia y resaltado del usuario actual
-   - 🍽️ Platos típicos en cards con emoji
-   - 🧂 Ingredientes estrella en pills/chips
-   - 📜 Historia gastronómica / ✨ Qué los caracteriza
-   - 👨‍🍳 Tip para la feria
-   - 🔗 **Links externos** — Wikipedia (gastronomía), YouTube (recetas), Google y Cookpad (generados dinámicamente por país)
-7. **`s-admin` (Panel de Administración):** Solo accesible mediante PIN. Permite:
-   - Configurar grupos activos (1–10) con **steppers +/−** sincronizados en tiempo real a `config/numGrupos`
-   - Ajustar máx. integrantes por grupo con **steppers +/−** sincronizados a `config/maxPorGrupo`
-   - Ver cards de cada grupo activo con: estado (abierto/completo), conteo de expertos y novatos, lista de miembros y bandera del país sorteado
-   - Reiniciar la base de datos (participantes y grupos)
+6. **`s-ficha` (Resultado Gastronómico — versión interactiva completa):** Ficha técnica/didáctica estilo revista con:
+   - Hero con imagen del plato icónico, bandera, nombre del país y badge de grupo (o catálogo oficial si es visto por admin).
+   - 5 datos rápidos (capital, continente, idioma, moneda, población).
+   - 👥 **Equipo / Estado de asignación** — lista de integrantes del grupo o estado libre/disponible para ruleta si es visto por admin.
+   - 🍽️ **Platos típicos con fotos web** — tarjetas con foto individual de cada plato, badge emoji y descripción apetitosa.
+   - 📍 **Zonas y regiones emblemáticas con fotos web** — tarjetas fotográficas de las 2 regiones de mayor relevancia culinaria y cultural.
+   - 🧂 Ingredientes estrella en pills/chips.
+   - 📜 Historia gastronómica / ✨ Qué los caracteriza.
+   - 👨‍🍳 Tip para la feria / 💡 Dato curioso.
+   - 🔗 **Links externos** — Wikipedia, YouTube, Google y Cookpad generados dinámicamente.
+   - Botón de retroceso inteligente: vuelve a `s-grupo` para participantes, o a `s-admin` para administradores.
+7. **`s-admin` (Panel de Administración con Pestañas):** Solo accesible mediante PIN. Incluye dos pestañas:
+   - **📊 Pestaña "Grupos y Configuración":** Steppers para configurar grupos (1–10) e integrantes por grupo, cálculo de cupo total en tiempo real, cards de grupos con integrantes, estadísticas de experiencia, país sorteado y botón directo para ver su ficha gastronómica.
+   - **🌍 Pestaña "Fichas de Países":** Catálogo completo de los 10 países con filtros de continente (Todos, América, Europa, Asia, África), estado de asignación en tiempo real (🟢 Asignado a Grupo X vs ⚪ Disponible) y botón para abrir e inspeccionar la ficha completa.
 
 ---
 
