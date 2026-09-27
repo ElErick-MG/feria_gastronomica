@@ -7,5 +7,9 @@
       "**/.*",
       "**/node_modules/**"
     ]
+  },
+  "database": {
+    "rules": "firebase.rules.json"
   }
 }
+

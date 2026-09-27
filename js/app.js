@@ -70,20 +70,25 @@ const toast = t => {
 
 /* ===== 2. ESTADO GLOBAL ===== */
 /*
-  S.cupo    → límite de participantes (configurable por Admin en Firebase)
-  S.parts   → snapshot de /participantes
-  S.grupos  → snapshot de /grupos
-  S.me      → slug del participante actual
-  S.nombre  → nombre completo del participante actual
-  S.view    → id de la pantalla actualmente visible
-  S.stage   → etapa del participante: "grupo" | "ruleta" | "ficha"
-  S.anim    → true mientras la animación de la ruleta está corriendo
-  S.girando → true mientras se espera la transacción de giro
-  S.shown   → id del país que ya se animó (evita reanimar al mismo país)
-  S.toastFn → referencia al toast para usarse en ruleta.js sin import circular
+  S.cupo       → límite total de participantes (= numGrupos × maxPorGrupo)
+  S.numGrupos  → cantidad de grupos activos (1–10)
+  S.maxPorGrupo→ máx. integrantes por grupo (global)
+  S.letras     → letras activas derivadas de numGrupos
+  S.parts      → snapshot de /participantes
+  S.grupos     → snapshot de /grupos
+  S.me         → slug del participante actual
+  S.nombre     → nombre completo del participante actual
+  S.view       → id de la pantalla actualmente visible
+  S.stage      → etapa del participante: "grupo" | "ruleta" | "ficha"
+  S.anim       → true mientras la animación de la ruleta está corriendo
+  S.girando    → true mientras se espera la transacción de giro
+  S.shown      → id del país que ya se animó (evita reanimar al mismo país)
+  S.toastFn    → referencia al toast para usarse en ruleta.js sin import circular
 */
 export const S = {
-  cupo: 30, parts: {}, grupos: {},
+  cupo: 30, numGrupos: 10, maxPorGrupo: 3,
+  get letras() { return "ABCDEFGHIJ".slice(0, this.numGrupos).split(""); },
+  parts: {}, grupos: {},
   me: null, nombre: "", view: null,
   stage: "grupo", anim: false, girando: false, shown: null,
   toastFn: toast
@@ -105,7 +110,16 @@ function show(id) {
 /* ===== 4. LISTENERS EN TIEMPO REAL (Firebase) ===== */
 // Cada listener actualiza el estado local y dispara render() automáticamente.
 
-onValue(ref(db, "config/cupo"),  s => { S.cupo   = s.val() ?? 30; render(); });
+onValue(ref(db, "config/numGrupos"),   s => {
+  S.numGrupos   = s.val() ?? 10;
+  S.cupo        = S.numGrupos * S.maxPorGrupo;
+  render();
+});
+onValue(ref(db, "config/maxPorGrupo"), s => {
+  S.maxPorGrupo = s.val() ?? 3;
+  S.cupo        = S.numGrupos * S.maxPorGrupo;
+  render();
+});
 onValue(ref(db, "participantes"), s => { S.parts  = s.val() || {}; render(); });
 onValue(ref(db, "grupos"),        s => { S.grupos = s.val() || {}; render(); });
 
@@ -124,19 +138,26 @@ async function registrar(cocina) {
 
   const r = await runTransaction(ref(db, "participantes"), cur => {
     cur = cur || {};
-    if (cur[key]) return cur;                          // ya registrado: no duplicar
-    if (Object.keys(cur).length >= S.cupo) return;     // cupo lleno: abortar transacción
+    if (cur[key]) return cur;                              // ya registrado: no duplicar
+
+    const letrasActivas = S.letras;
+    const cupoTotal     = S.numGrupos * S.maxPorGrupo;
+    if (Object.keys(cur).length >= cupoTotal) return;     // cupo lleno: abortar
 
     const same = {}, tot = {};
-    LETRAS.forEach(l => same[l] = tot[l] = 0);
+    letrasActivas.forEach(l => same[l] = tot[l] = 0);
     Object.values(cur).forEach(p => {
+      if (!letrasActivas.includes(p.grupo)) return;        // ignorar grupos eliminados
       tot[p.grupo]++;
       if (p.cocina === cocina) same[p.grupo]++;
     });
 
-    // Ordenar grupos: primero los de menor concentración del mismo tipo,
-    // desempate por tamaño total → grupo más equilibrado
-    const g = [...LETRAS].sort((a, b) => same[a] - same[b] || tot[a] - tot[b])[0];
+    // Solo considerar grupos con espacio disponible
+    const disponibles = letrasActivas.filter(l => tot[l] < S.maxPorGrupo);
+    if (!disponibles.length) return;                       // todos llenos: abortar
+
+    // Ordenar: menor concentración del mismo tipo, desempate por tamaño total
+    const g = disponibles.sort((a, b) => same[a] - same[b] || tot[a] - tot[b])[0];
 
     cur[key] = { nombre: S.nombre, cocina, grupo: g, ts: Date.now() };
     return cur;
@@ -367,21 +388,55 @@ function renderFicha(res) {
 
 /** renderAdmin() — Panel de administración */
 function renderAdmin() {
-  const ps = Object.values(S.parts);
+  const ps  = Object.values(S.parts);
+  const total = ps.length;
+  const cupoTotal = S.numGrupos * S.maxPorGrupo;
 
-  $("#admResumen").textContent = `${ps.length} / ${S.cupo} participantes registrados`;
+  // Resumen superior
+  $(".adm-resumen").textContent = `${total} / ${cupoTotal} participantes registrados`;
 
-  // Solo actualizar el input si el usuario no lo está editando
-  if (document.activeElement !== $("#inCupo")) $("#inCupo").value = S.cupo;
+  // Valores en los steppers (sin modificarlos si el admin los está pulsando rápido)
+  $("#admNumGrupos").textContent   = S.numGrupos;
+  $("#admMaxPorGrupo").textContent = S.maxPorGrupo;
+  $("#admCupoCalc").textContent    =
+    `Cupo total calculado: ${S.numGrupos} grupos × ${S.maxPorGrupo} integrantes = ${cupoTotal} personas`;
 
-  $("#admGrid").innerHTML = LETRAS.map(l => {
-    const m = ps.filter(p => p.grupo === l);
-    const g = S.grupos[l];
+  // Grid de grupos con diseño enriquecido
+  $("#admGrid").innerHTML = S.letras.map(l => {
+    const miembros  = ps.filter(p => p.grupo === l);
+    const expertos  = miembros.filter(p => p.cocina === "si").length;
+    const novatos   = miembros.length - expertos;
+    const sorteo    = S.grupos[l];
+    const lleno     = miembros.length >= S.maxPorGrupo;
+    const pais      = sorteo ? PAISES.find(p => p.id === sorteo.pais) : null;
+
     return `
-      <div class="card">
-        <h3>Grupo ${l}</h3>
-        ${m.length} personas · ${m.filter(p => p.cocina === "si").length} con experiencia<br>
-        ${g ? PAISES.find(p => p.id === g.pais).n + " (giró " + esc(g.giroPor) + ")" : "Sin girar"}
+      <div class="adm-card">
+        <div class="adm-card-header">
+          <span class="adm-card-letra">${l}</span>
+          <span class="adm-card-badge ${lleno ? 'adm-badge-full' : 'adm-badge-open'}">
+            ${lleno ? 'Completo' : `${miembros.length}/${S.maxPorGrupo}`}
+          </span>
+        </div>
+        <div class="adm-card-stats">
+          <span>👨‍🍳 ${expertos} exp.</span>
+          <span>🌱 ${novatos} nov.</span>
+        </div>
+        <ul class="adm-card-lista">
+          ${miembros.length
+            ? miembros.map(m =>
+                `<li><span class="adm-miembro-dot">●</span>${esc(m.nombre)}</li>`
+              ).join("")
+            : '<li class="adm-card-vacio">Sin integrantes</li>'
+          }
+        </ul>
+        <div class="adm-card-footer">
+          ${pais
+            ? `<img src="https://flagcdn.com/w40/${pais.iso}.png" class="adm-pais-flag" alt="">
+               <span class="adm-pais-nombre">${pais.n}</span>`
+            : '<span class="adm-sin-sorteo">⏳ Sin sorteo</span>'
+          }
+        </div>
       </div>`;
   }).join("");
 }
@@ -404,16 +459,40 @@ $("#linkAdmin").onclick  = async () => {
 
 // ── Admin ──────────────────────────────────────────────────────
 $("#btnVolver").onclick  = () => { S.view = null; S.me ? render() : show("s-intro"); };
-$("#btnCupo").onclick    = () => {
-  const v = +$("#inCupo").value;
-  if (v >= 1) set(ref(db, "config/cupo"), v).then(() => toast("Cupo actualizado"));
-};
-$("#btnReset").onclick   = async () => {
+
+// Steppers de configuración — event delegation (evita hit-test inválido en
+// Chrome/Edge Android cuando el panel pasa de hidden a visible con GSAP)
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".adm-stepper");
+  if (!btn) return;
+
+  if (btn.id === "btnGruposMenos" || btn.id === "btnGruposMas") {
+    const delta = btn.id === "btnGruposMas" ? +1 : -1;
+    const nuevo = Math.min(10, Math.max(1, S.numGrupos + delta));
+    if (nuevo === S.numGrupos) return;
+    set(ref(db, "config/numGrupos"), nuevo)
+      .then(() => toast(`Grupos activos: ${nuevo} (A–${"ABCDEFGHIJ"[nuevo - 1]})`))
+      .catch(() => toast("⚠️ Sin permiso — despliega las reglas de Firebase"));
+  }
+
+  if (btn.id === "btnMaxMenos" || btn.id === "btnMaxMas") {
+    const delta = btn.id === "btnMaxMas" ? +1 : -1;
+    const nuevo = Math.max(1, S.maxPorGrupo + delta);
+    if (nuevo === S.maxPorGrupo) return;
+    set(ref(db, "config/maxPorGrupo"), nuevo)
+      .then(() => toast(`Máx. por grupo: ${nuevo} integrantes`))
+      .catch(() => toast("⚠️ Sin permiso — despliega las reglas de Firebase"));
+  }
+});
+
+$("#btnReset").onclick = async () => {
   if (confirm("¿Borrar participantes y sorteos?")) {
     await remove(ref(db, "participantes"));
     await remove(ref(db, "grupos"));
   }
 };
+
+
 
 // ── Flujo participante ─────────────────────────────────────────
 $("#btnRuleta").onclick  = () => { S.stage = "ruleta"; render(); };

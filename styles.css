@@ -624,3 +624,218 @@ li {
     transition: none !important;
   }
 }
+
+/* ===== 14. Panel de Administración ===== */
+
+/* Caja de configuración */
+.adm-config-box {
+  max-width: 560px;
+  display: grid;
+  gap: 1rem;
+}
+
+.adm-resumen {
+  color: var(--mut);
+  font-size: .9rem;
+  margin: 0;
+}
+
+/* Fila de configuración con stepper */
+.adm-cfg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(255,255,255,.04);
+  border-radius: 14px;
+  padding: .8rem 1rem;
+}
+
+.adm-cfg-label {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-cfg-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.adm-cfg-label strong {
+  display: block;
+  font-size: .9rem;
+}
+
+.adm-cfg-label small {
+  color: var(--mut);
+  font-size: .72rem;
+}
+
+.adm-cfg-ctrl {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-shrink: 0;
+}
+
+/* Botones +/- del stepper */
+.adm-stepper {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--a), var(--b));
+  color: #1b0f0a;
+  font-size: 1.2rem;
+  font-weight: 800;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.adm-stepper:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.adm-stepper-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-family: Fraunces, Georgia, serif;
+  color: var(--a);
+  min-width: 2rem;
+  text-align: center;
+}
+
+/* Línea de cupo calculado */
+.adm-cupo-calc {
+  font-size: .78rem;
+  color: var(--mut);
+  text-align: center;
+  background: rgba(242,165,65,.08);
+  border-radius: 99px;
+  padding: .4rem 1rem;
+  margin: 0;
+}
+
+/* Grid de grupos */
+.adm-grid-custom {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: .8rem;
+  width: 100%;
+}
+
+/* Card de cada grupo */
+.adm-card {
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  text-align: left;
+}
+
+.adm-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.adm-card-letra {
+  font: 800 1.8rem Fraunces, serif;
+  color: var(--a);
+  line-height: 1;
+}
+
+.adm-card-badge {
+  font-size: .7rem;
+  font-weight: 700;
+  padding: .2rem .6rem;
+  border-radius: 99px;
+}
+
+.adm-badge-open {
+  background: rgba(242,165,65,.15);
+  color: var(--a);
+  border: 1px solid rgba(242,165,65,.3);
+}
+
+.adm-badge-full {
+  background: rgba(76,175,80,.15);
+  color: #81c784;
+  border: 1px solid rgba(76,175,80,.3);
+}
+
+.adm-card-stats {
+  display: flex;
+  gap: .6rem;
+  font-size: .75rem;
+  color: var(--mut);
+}
+
+/* Lista de miembros dentro del card */
+.adm-card-lista {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid rgba(255,255,255,.06);
+  padding-top: .4rem;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  flex: 1;
+}
+
+.adm-card-lista li {
+  font-size: .78rem;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  padding: 0;
+  border: none;
+}
+
+.adm-miembro-dot {
+  color: var(--a);
+  font-size: .5rem;
+  flex-shrink: 0;
+}
+
+.adm-card-vacio {
+  color: var(--mut);
+  font-style: italic;
+}
+
+/* Footer del card: país sorteado */
+.adm-card-footer {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  border-top: 1px solid rgba(255,255,255,.06);
+  padding-top: .5rem;
+  margin-top: auto;
+}
+
+.adm-pais-flag {
+  width: 28px;
+  border-radius: 3px;
+}
+
+.adm-pais-nombre {
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.adm-sin-sorteo {
+  font-size: .75rem;
+  color: var(--mut);
+}
+
