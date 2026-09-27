@@ -33,15 +33,20 @@ Aplicación web interactiva y multidispositivo para gestionar **eventos gastron�
 │  1. 🏠 Bienvenida     →  Pantalla inmersiva con micro-animaciones │
 │  2. 👤 Identificación →  Ingresa tu nombre (reconexión automática)│
 │  3. 🍳 Habilidades    →  ¿Tienes experiencia en cocina? Sí / No  │
-│  4. 👥 Asignación     →  Algoritmo balanceado → Grupo A–J        │
-│  5. ⏳ Sala de Espera →  Barra en tiempo real · X/30 inscritos   │
+│  4. 👥 Asignación     →  Algoritmo balanceado → Grupo A–J activos │
+│  5. ⏳ Sala de Espera →  Barra en tiempo real · lista de tu equipo│
 │  6. 🎡 Ruleta         →  Giro grupal · Animación GSAP · Confetti │
-│  7. 🌍 Ficha País     →  Historia, platos típicos, cultura, datos │
+│  7. 🌍 Ficha País     →  Historia, platos, ingredientes, equipo,  │
+│                          links externos y tip para la feria      │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+> 🔙 La navegación incluye botones de retroceso en las pantallas que lo requieren (Identificación, Cocina, Ruleta y Ficha).
+
 ---
+
+
 
 ## 🌍 Países del Sorteo
 
@@ -123,7 +128,9 @@ const firebaseConfig = {
 ```
 /
 ├── config/
-│   └── cupo              # Límite de participantes (default: 30) — solo admin puede editar
+│   ├── numGrupos        # Grupos activos 1–10 (default: 10) — editable por admin
+│   ├── maxPorGrupo      # Máx. integrantes por grupo (default: 3) — editable por admin
+│   └── cupo             # [legado] campo histórico, ya no se usa activamente
 ├── participantes/
 │   └── {slug_nombre}     # { nombre, cocina, grupo, ts }
 ├── grupos/
@@ -131,6 +138,8 @@ const firebaseConfig = {
 └── admin/
     └── pin               # PIN del administrador — solo legible con Firebase Auth ✅
 ```
+
+> 💡 Los nodos `numGrupos` y `maxPorGrupo` se crean automáticamente la primera vez que el admin usa los steppers. El cupo total = `numGrupos × maxPorGrupo`.
 
 ---
 
@@ -185,18 +194,20 @@ Google Cloud Console → APIs & Services → Credentials
 | Rol | Acceso | Funciones |
 |---|---|---|
 | **Participante** | Nombre completo | Registro, sala de espera, ruleta, ficha del país |
-| **Administrador** | PIN verificado en Firebase | Ver progreso de grupos, editar cupo, reiniciar evento |
+| **Administrador** | PIN verificado en Firebase | Configurar grupos activos (1–10) con steppers, ajustar máx. integrantes por grupo, monitorear equipos en tiempo real (miembros + país sorteado), reiniciar evento |
 
 ---
 
 ## 🧠 Algoritmo de Balanceo
 
-El sistema distribuye participantes en **10 grupos (A–J)** de forma equitativa mediante una **transacción atómica en Firebase** que:
+El sistema distribuye participantes en los **grupos activos configurados (A–J, 1–10)** de forma equitativa mediante una **transacción atómica en Firebase** que:
 
-1. Cuenta cuántos participantes con experiencia (`Sí`) y sin experiencia (`No`) hay en cada grupo
-2. Asigna al grupo con **menos personas del mismo perfil**, desempatando por tamaño total
-3. Garantiza que ningún grupo concentre solo expertos o solo novatos
-4. Es resistente a condiciones de carrera (múltiples registros simultáneos)
+1. Cuenta cuántos participantes con experiencia (`Sí`) y sin experiencia (`No`) hay en cada grupo activo
+2. Filtra solo los grupos con **espacio disponible** (menos de `maxPorGrupo` integrantes)
+3. Asigna al grupo con **menos personas del mismo perfil**, desempatando por tamaño total
+4. Garantiza que ningún grupo concentre solo expertos o solo novatos
+5. Es resistente a condiciones de carrera (múltiples registros simultáneos)
+6. Ignora grupos que el admin haya desactivado (letras fuera del rango `numGrupos`)
 
 ---
 
@@ -235,16 +246,18 @@ Al ser una aplicación con despliegue manual desde la terminal, **no se actualiz
 ```bash
 # 1. Probar localmente en tu navegador (Live Server o abriendo index.html)
 
-# 2. Desplegar los cambios a Firebase Hosting (tarda ~10 seg)
-firebase deploy --only hosting
+# 2. Desplegar hosting Y reglas de base de datos (obligatorio si cambiaste firebase.rules.json)
+firebase deploy --only hosting,database
 
 # 3. Guardar el historial en tu repositorio de GitHub
 git add .
-git commit -m "Descripción de los cambios realizados"
+git commit -m "feat/fix: descripción de los cambios realizados"
 git push origin main
 ```
 
 > 💡 **Nota:** Tras hacer deploy, abre el enlace en tu navegador y presiona `Ctrl + F5` (o `Cmd + Shift + R` en Mac) para forzar la recarga ignorando la caché.
+
+> ⚠️ Si solo cambias archivos JS/CSS/HTML y **no** tocas `firebase.rules.json`, puedes usar `--only hosting` para ahorrar tiempo.
 
 ---
 
@@ -307,10 +320,14 @@ Si prefieres alojar el frontend en Vercel:
 ## 📱 Compatibilidad
 
 - ✅ Móviles, tablets y escritorio (diseño responsivo)
+- ✅ Chrome, Edge, Safari y Firefox en Android e iOS
+- ✅ **Fix móvil:** event delegation en botones críticos — resuelve fallo de tap en Chrome/Edge Android
 - ✅ Modo de movimiento reducido (`prefers-reduced-motion`)
 - ✅ Accesibilidad básica (focus visible, aria-labels, alt en imágenes)
 - ✅ Múltiples dispositivos simultáneos vía Firebase Real-time listeners
 - ✅ Reconexión automática: si ya te registraste, retomas donde lo dejaste
+- ✅ Navegación de retroceso en pantallas donde aplica (← Volver)
+
 
 ---
 

@@ -57,17 +57,18 @@ feria_gastronomica/
    * Exporta instancias de `db`, `auth` y los métodos necesarios (`ref`, `onValue`, `get`, `set`, `remove`, `runTransaction`, `signInAnonymously`).
 2. **[js/data.js](file:///d:/levantamientoProyectos/feria_gastronomica/js/data.js):**
    * Arreglo inmutable `PAISES` con 10 elementos.
-   * Cada objeto contiene: `id`, `iso` (para banderas en `flagcdn.com`), `n` (nombre), `of` (nombre oficial), `pl` (platos típicos con emoji), `h` (historia gastronómica), `k` (características), `p` (población) y `d` (dato curioso).
+   * Cada objeto contiene: `id`, `iso` (para banderas en `flagcdn.com`), `n` (nombre), `of` (nombre oficial), `cap` (capital), `con` (continente), `lang` (idioma), `mon` (moneda), `pl` (platos típicos con emoji), `ing` (ingredientes estrella), `h` (historia gastronómica), `k` (características), `p` (población), `d` (dato curioso), `tip` (consejo para la feria), `img` (URL Unsplash del plato icónico) y `wiki` (slug de Wikipedia de la gastronomía del país).
 3. **[js/ruleta.js](file:///d:/levantamientoProyectos/feria_gastronomica/js/ruleta.js):**
    * `buildRueda()`: Dibuja un `<svg>` con sectores angulares (`360 / PAISES.length`), cálculo trigonométrico (`Math.cos`, `Math.sin`), etiquetas de texto orientadas y banderas.
    * `animar(res, me, onDone)`: Ejecuta animación GSAP de 6 vueltas completas + sector específico con inercia, dispara confeti y muestra mensaje contextual.
    * `girar()`: Transacción atómica en Firebase (`grupos`) que garantiza que un solo miembro fije el país de su grupo, excluyendo países ya tomados.
 4. **[js/app.js](file:///d:/levantamientoProyectos/feria_gastronomica/js/app.js):**
-   * Mantiene el estado reactivo `S`.
-   * Registra listeners en tiempo real (`onValue`) para `config/cupo`, `participantes` y `grupos`.
-   * Ejecuta el **algoritmo de balanceo** de equipos al registrar un participante.
-   * Controla la navegación entre vistas mediante la función `show(id)` y el enrutador `render()`.
+   * Mantiene el estado reactivo `S` con propiedades: `numGrupos` (1–10), `maxPorGrupo` (global), `cupo` (= numGrupos × maxPorGrupo) y `letras` (getter que devuelve las letras activas A–J según `numGrupos`).
+   * Registra listeners en tiempo real (`onValue`) para `config/numGrupos`, `config/maxPorGrupo`, `participantes` y `grupos`.
+   * Ejecuta el **algoritmo de balanceo** dinámico de equipos al registrar un participante, respetando el límite `maxPorGrupo` por grupo.
+   * Controla la navegación entre vistas mediante la función `show(id)`, el enrutador `render()` y **botones de retroceso** (← Volver) en pantallas s-nombre, s-cocina, s-ruleta y s-ficha.
    * Administra la autenticación anónima y verificación segura del PIN de administrador.
+   * Usa **event delegation** en lugar de `onclick` directo para botones críticos (selección cocina, steppers admin) — necesario para evitar fallos de hit-test en Chrome/Edge Android con GSAP.
 
 ---
 
@@ -101,8 +102,20 @@ La aplicación funciona como una SPA (Single Page Application) controlada por la
    * Barra de progreso animada indicando `inscritos / cupo`.
    * Botón de ruleta deshabilitado hasta que se complete el cupo configurado.
 5. **`s-ruleta` (Sorteo Sincronizado):** Ruleta SVG interactiva. Cualquier miembro del grupo puede girar; el resultado se sincroniza en Firebase y dispara la animación simultáneamente en los dispositivos de todos los integrantes.
-6. **`s-ficha` (Resultado Gastronómico):** Muestra bandera del país, platos recomendados, historia, datos culturales y curiosidades para orientar el trabajo culinario del equipo.
-7. **`s-admin` (Panel de Administración):** Solo accesible mediante PIN. Permite monitorear grupos, modificar el cupo del evento en vivo y reiniciar la base de datos.
+6. **`s-ficha` (Resultado Gastronómico — versión enriquecida):** Ficha técnica/didáctica estilo revista con 8 secciones:
+   - Hero con imagen del plato, bandera, nombre del país y grupo
+   - 5 datos rápidos (capital, continente, idioma, moneda, población)
+   - 👥 **Tu equipo** — lista de todos los integrantes del grupo con avatar (inicial), tag de experiencia y resaltado del usuario actual
+   - 🍽️ Platos típicos en cards con emoji
+   - 🧂 Ingredientes estrella en pills/chips
+   - 📜 Historia gastronómica / ✨ Qué los caracteriza
+   - 👨‍🍳 Tip para la feria
+   - 🔗 **Links externos** — Wikipedia (gastronomía), YouTube (recetas), Google y Cookpad (generados dinámicamente por país)
+7. **`s-admin` (Panel de Administración):** Solo accesible mediante PIN. Permite:
+   - Configurar grupos activos (1–10) con **steppers +/−** sincronizados en tiempo real a `config/numGrupos`
+   - Ajustar máx. integrantes por grupo con **steppers +/−** sincronizados a `config/maxPorGrupo`
+   - Ver cards de cada grupo activo con: estado (abierto/completo), conteo de expertos y novatos, lista de miembros y bandera del país sorteado
+   - Reiniciar la base de datos (participantes y grupos)
 
 ---
 
@@ -113,14 +126,15 @@ La aplicación funciona como una SPA (Single Page Application) controlada por la
 * **Problema que resuelve:** Evitar que un grupo quede compuesto solo por expertos en cocina o solo por principiantes, o que los grupos tengan cantidades de miembros desproporcionadas.
 * **Mecanismo:**
   1. Utiliza `runTransaction` sobre `/participantes` para garantizar atomicidad y evitar colisiones si varios usuarios se inscriben al mismo milisegundo.
-  2. Inicializa contadores para los 10 grupos (`A` a `J`):
-     * `tot[grupo]`: número total de miembros.
-     * `same[grupo]`: número de miembros con el mismo perfil culinario (`cocina === "si"` o `"no"`).
-  3. Ordena los grupos con el criterio:
+  2. Lee las letras activas (`S.letras` = `A` a la letra `numGrupos - 1`).
+  3. Filtra los grupos con espacio disponible: `tot[l] < S.maxPorGrupo`.
+  4. Inicializa contadores para los grupos activos (`tot[]` y `same[]`).
+  5. Ordena los grupos disponibles con el criterio:
      ```javascript
-     const g = [...LETRAS].sort((a, b) => same[a] - same[b] || tot[a] - tot[b])[0];
+     disponibles.sort((a, b) => same[a] - same[b] || tot[a] - tot[b])[0];
      ```
-  4. Asigna al participante al grupo con menor concentración de su mismo perfil, desempatando por el grupo más vacío.
+  6. Asigna al participante al grupo con menor concentración de su mismo perfil, desempatando por el grupo más vacío.
+  7. Si no hay grupos con espacio, aborta la transacción.
 
 ### B. Algoritmo de Asignación Exclusiva de Países (Ruleta)
 * **Ubicación:** Función `girar()` en `js/ruleta.js`.
@@ -144,7 +158,8 @@ La aplicación funciona como una SPA (Single Page Application) controlada por la
 ```json
 {
   "config": {
-    "cupo": 30
+    "numGrupos": 10,
+    "maxPorGrupo": 3
   },
   "participantes": {
     "juan_perez": {
@@ -169,27 +184,29 @@ La aplicación funciona como una SPA (Single Page Application) controlada por la
 
 ### Reglas de Seguridad ([firebase.rules.json](file:///d:/levantamientoProyectos/feria_gastronomica/firebase.rules.json)):
 1. **Raíz bloqueada:** `.read: false`, `.write: false`.
-2. **`config/cupo`:** Lectura pública (`.read: true`), escritura restringida a usuarios con Firebase Auth (`auth != null`).
-3. **`participantes`:** Lectura pública (para ver el progreso de la sala de espera). Escritura requiere `auth != null`. Validación estricta que exige nombre entre 3 y 100 caracteres, cocina `"si"` o `"no"`, grupo de texto y timestamp numérico.
-4. **`grupos`:** Lectura pública (para sincronizar la ruleta entre todos). Escritura requiere `auth != null` y estructura válida.
-5. **`admin/pin`:** **Lectura restringida exclusivamente a usuarios autenticados** (`auth != null`). Escritura bloqueada (`.write: false`) para evitar manipulación remota desde el cliente.
+2. **`config`:** Lectura pública (`.read: true` en el nodo padre). Escritura restringida a usuarios con Firebase Auth (`auth != null`). Los sub-nodos `numGrupos` y `maxPorGrupo` tienen validación numérica (`numGrupos` entre 1 y 10, `maxPorGrupo` >= 1).
+3. **`participantes`:** Lectura pública. Escritura requiere `auth != null`. Validación estricta de estructura.
+4. **`grupos`:** Lectura pública. Escritura requiere `auth != null` y estructura válida.
+5. **`admin/pin`:** Lectura restringida a usuarios autenticados. Escritura completamente bloqueada.
+
+> ⚠️ **IMPORTANTE para deploy:** `firebase.json` debe incluir `"database": { "rules": "firebase.rules.json" }` para que las reglas se publiquen con `firebase deploy`. Sin esta sección, solo se despliega hosting y las reglas permanecen sin actualizar.
 
 ---
 
 ## 7. 🚀 Operaciones y DevOps (Firebase Hosting)
 
-* **Publicación de cambios:**
-  Al no tener compilador ni build step, para enviar cambios a producción se ejecuta:
+* **Publicación de cambios (hosting + reglas):**
+  ```bash
+  firebase deploy --only hosting,database
+  ```
+  > ⚠️ Siempre usar `hosting,database` si hubo cambios en `firebase.rules.json` o `firebase.json`.
+* **Solo hosting (sin cambios en reglas):**
   ```bash
   firebase deploy --only hosting
   ```
-* **Publicación de reglas de base de datos:**
-  ```bash
-  firebase deploy --only database
-  ```
 * **Flujo con Git:**
   1. Pruebas locales (abrir en navegador o Live Server).
-  2. Despliegue a Firebase: `firebase deploy --only hosting`.
+  2. Despliegue a Firebase: `firebase deploy --only hosting,database`.
   3. Commit y push a GitHub:
      ```bash
      git add .
@@ -203,9 +220,12 @@ La aplicación funciona como una SPA (Single Page Application) controlada por la
 
 Cuando un agente IA trabaje en este repositorio, **DEBE CUMPLIR** las siguientes reglas:
 
-1. **NO introducir Bundlers ni Node Build Tools:** No convertir el proyecto a Webpack, Vite, React o Next.js a menos que el usuario lo solicite explícitamente. Debe mantenerse en Vanilla JS (ES Modules nativos) accesible para cualquier navegador.
-2. **NO Hardcodear el PIN de Admin en el Código Fuente:** El PIN vive en `/admin/pin` de Firebase y se valida mediante `verificarAdmin()` con `signInAnonymously()`. No reintroducir variables como `const ADMIN_PIN = "..."` en JavaScript.
-3. **Respetar la Atomicidad en Firebase:** Cualquier operación que involucre cupo, asignación de grupos o giros de ruleta DEBE usar `runTransaction`. Modificar estos valores con `set()` simple introduciría condiciones de carrera críticas.
-4. **Mantener la Modularidad de `js/`:** No reincorporar scripts masivos en `index.html`. Cada responsabilidad debe permanecer en su módulo correspondiente (`firebase.js`, `data.js`, `ruleta.js`, `app.js`).
-5. **Estilos y Diseño:** No añadir clases de utilidades ni instalar TailwindCSS a menos que el usuario lo pida. Todas las clases visuales deben ubicarse en `styles.css` respetando el sistema de diseño oscuro y cálido.
-6. **Seguridad en `.gitignore`:** Asegurar siempre que archivos temporales de Firebase (`.firebase/`), logs de depuración (`firebase-debug.log`), llaves de servicio (`serviceAccountKey.json`) y entornos `.env` permanezcan ignorados.
+1. **NO introducir Bundlers ni Node Build Tools:** No convertir el proyecto a Webpack, Vite, React o Next.js a menos que el usuario lo solicite explícitamente.
+2. **NO Hardcodear el PIN de Admin en el Código Fuente:** El PIN vive en `/admin/pin` de Firebase y se valida mediante `verificarAdmin()` con `signInAnonymously()`.
+3. **Respetar la Atomicidad en Firebase:** Operaciones de cupo, asignación de grupos y giros DEBEN usar `runTransaction`. Nunca `set()` directo en estas rutas.
+4. **Mantener la Modularidad de `js/`:** No reincorporar scripts masivos en `index.html`. Responsabilidades separadas por módulo.
+5. **Estilos y Diseño:** No añadir TailwindCSS. Todas las clases en `styles.css` con el sistema de diseño oscuro y cálido.
+6. **Seguridad en `.gitignore`:** `.firebase/`, logs, llaves y `.env` siempre ignorados.
+7. **Event Delegation en botones críticos (Chrome/Edge Android):** Los botones dentro de pantallas animadas con GSAP (`hidden` → visible) deben usar `document.addEventListener("click", e => { const b = e.target.closest("[selector]"); ... })` en lugar de `element.onclick = ...`. El `.onclick` directo falla en Chrome/Edge Android porque GSAP modifica el `transform` del contenedor durante la transición, invalidando el hit-test del navegador.
+8. **Cupo = dinámico:** El cupo total se calcula siempre como `S.numGrupos × S.maxPorGrupo`. No asumir 30 participantes o 10 grupos fijos. Usar `S.letras` (getter) para obtener los grupos activos.
+9. **Despliegue de reglas:** Siempre usar `firebase deploy --only hosting,database` si se modificó `firebase.rules.json`. La sección `"database": { "rules": "firebase.rules.json" }` debe estar en `firebase.json`.
