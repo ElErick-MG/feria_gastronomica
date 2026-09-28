@@ -68,6 +68,7 @@
       <p id="progTxt"></p>
       <button id="btnRuleta" style="margin-top:1rem" disabled>Esperando a los demás…</button>
       <button class="btn-reglas-box" data-abrir-reglas style="margin-top:.8rem">📜 Ver reglas del evento</button>
+      <button type="button" class="btn-paises-box" id="btnVerPaisesGrupo" data-ver-catalogo-paises style="margin-top:.6rem">🌍 Fichas de países</button>
     </div>
   </section>
 
@@ -90,6 +91,32 @@
     <button class="btn-back" id="btnVolverGrupoF">← Volver al grupo</button>
     <button class="btn-top-reglas" data-abrir-reglas title="Ver reglas del evento">📜 Reglas</button>
     <div id="ficha"></div>
+  </section>
+
+  <!-- Catálogo de Fichas de Países para Participantes -->
+  <section id="s-paises" class="screen" hidden>
+    <button class="btn-back" id="btnVolverGrupoP">← Volver al grupo</button>
+    <button class="btn-top-reglas" data-abrir-reglas title="Ver reglas del evento">📜 Reglas</button>
+
+    <div class="box paises-header-box">
+      <span class="paises-header-badge">🎲 Sorteo Gastronómico</span>
+      <h2>Fichas de Países</h2>
+      <div class="paises-mensaje-destacado">
+        <span class="paises-mensaje-icono">👨‍🍳</span>
+        <p><strong>Ficha de los países que le puede tocar cocinar a tu grupo:</strong> En la feria, a tu equipo se le asignará al azar la gastronomía de uno de estos 10 países. ¡Explora cada ficha para conocer su cultura, historia y platos típicos!</p>
+      </div>
+
+      <!-- Filtros de continentes -->
+      <div class="adm-paises-filtro-bar" id="paisesFiltrosPart">
+        <button class="adm-filtro-btn active" data-filtro-part="todos">Todos (10)</button>
+        <button class="adm-filtro-btn" data-filtro-part="América">América</button>
+        <button class="adm-filtro-btn" data-filtro-part="Europa">Europa</button>
+        <button class="adm-filtro-btn" data-filtro-part="Asia">Asia</button>
+        <button class="adm-filtro-btn" data-filtro-part="África">África</button>
+      </div>
+    </div>
+
+    <div id="paisesGrid" class="adm-paises-grid" style="max-width:880px"></div>
   </section>
 
   <!-- Panel de Administración -->

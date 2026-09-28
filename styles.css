@@ -1211,6 +1211,13 @@ li {
   border: 1px solid rgba(255, 255, 255, .08);
 }
 
+.status-propio {
+  background: rgba(242, 165, 65, .2);
+  color: var(--a);
+  border: 1px solid rgba(242, 165, 65, .5);
+  box-shadow: 0 0 12px rgba(242, 165, 65, .2);
+}
+
 /* Platos tags en tarjeta */
 .adm-pais-platos-mini {
   display: flex;
@@ -1367,6 +1374,38 @@ li {
   box-shadow: 0 4px 14px rgba(242, 165, 65, .25);
 }
 
+/* Botón de Fichas de países en sala de espera */
+.btn-paises-box {
+  width: 100%;
+  background: rgba(255, 255, 255, .06);
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, .15);
+  font-weight: 700;
+  font-size: .88rem;
+  padding: .75rem 1.2rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 2;
+}
+
+.btn-paises-box:hover {
+  background: rgba(242, 165, 65, .16);
+  border-color: rgba(242, 165, 65, .5);
+  color: var(--a);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(242, 165, 65, .2);
+}
+
 /* Overlay / Backdrop del modal */
 .modal-overlay {
   position: fixed;
@@ -1379,6 +1418,11 @@ li {
   align-items: center;
   justify-content: center;
   padding: 1rem;
+}
+
+.modal-overlay[hidden] {
+  display: none !important;
+  pointer-events: none !important;
 }
 
 /* Card contenedor del modal */
@@ -1750,5 +1794,56 @@ li {
 
 .adm-btn-eliminar-huerfanos:hover {
   background: #9e3522;
+}
+
+/* Header box del catálogo de países para participantes */
+.paises-header-box {
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: .8rem;
+  align-items: center;
+  text-align: center;
+}
+
+.paises-header-badge {
+  display: inline-block;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--a);
+  background: rgba(242, 165, 65, .12);
+  border: 1px solid rgba(242, 165, 65, .25);
+  padding: .25rem .75rem;
+  border-radius: 99px;
+}
+
+/* Banner destacado informativo para el participante */
+.paises-mensaje-destacado {
+  background: linear-gradient(135deg, rgba(242, 165, 65, .12), rgba(228, 87, 46, .1));
+  border: 1px solid rgba(242, 165, 65, .3);
+  border-radius: 14px;
+  padding: .9rem 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  text-align: left;
+}
+
+.paises-mensaje-icono {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.paises-mensaje-destacado p {
+  margin: 0;
+  font-size: .88rem;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.paises-mensaje-destacado strong {
+  color: var(--a);
 }
 

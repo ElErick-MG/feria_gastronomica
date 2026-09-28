@@ -93,6 +93,8 @@ export const S = {
   me: null, nombre: "", view: null,
   stage: "grupo", anim: false, girando: false, shown: null,
   fromAdmin: false,
+  fromCatalogo: false,
+  partFiltro: "todos",
   toastFn: toast
 };
 
@@ -123,6 +125,13 @@ function aplicarVista(screenId, extra = {}) {
     S.fromAdmin = false;
   }
 
+  // Sincronizar flag de catálogo de países de participante
+  if (extra.fromCatalogo !== undefined) {
+    S.fromCatalogo = !!extra.fromCatalogo;
+  } else if (screenId !== "s-ficha") {
+    S.fromCatalogo = false;
+  }
+
   if (screenId === "s-intro") {
     show("s-intro");
   } else if (screenId === "s-nombre") {
@@ -146,9 +155,13 @@ function aplicarVista(screenId, extra = {}) {
     } else {
       show("s-ruleta");
     }
+  } else if (screenId === "s-paises") {
+    renderPaisesParticipante();
   } else if (screenId === "s-ficha") {
     if (extra.fromAdmin && extra.pais) {
       renderFicha({ pais: extra.pais, fromAdmin: true });
+    } else if (extra.fromCatalogo && extra.pais) {
+      renderFicha({ pais: extra.pais, fromCatalogo: true });
     } else {
       S.stage = "ficha";
       const me = S.parts[S.me];
@@ -383,6 +396,8 @@ async function eliminarParticipantesInactivos() {
  */
 function render() {
   if (S.view === "s-admin") return renderAdmin();
+  if (S.view === "s-paises") return renderPaisesParticipante();
+  if (S.view === "s-ficha" && (S.fromCatalogo || S.fromAdmin)) return;
 
   const me = S.parts[S.me];
 
@@ -455,12 +470,13 @@ function renderFicha(res) {
 
   const p = PAISES.find(x => x.id === res.pais);
   const esAdmin = !!(res && res.fromAdmin);
+  const esCatalogo = !!(res && res.fromCatalogo);
 
   // Determinar grupo y miembros
   let g = null;
   let miembros = [];
 
-  if (esAdmin) {
+  if (esAdmin || esCatalogo) {
     const asignado = Object.entries(S.grupos || {}).find(([letra, d]) => d && d.pais === p.id);
     if (asignado) {
       g = asignado[0];
@@ -474,8 +490,16 @@ function renderFicha(res) {
   // Configurar botón de retroceso según origen
   const btnBack = $("#btnVolverGrupoF");
   if (btnBack) {
-    btnBack.textContent = esAdmin ? "← Volver al panel de administración" : "← Volver al grupo";
-    btnBack.onclick = () => retroceder(esAdmin ? "s-admin" : "s-grupo");
+    if (esAdmin) {
+      btnBack.textContent = "← Volver al panel de administración";
+      btnBack.onclick = () => retroceder("s-admin");
+    } else if (esCatalogo) {
+      btnBack.textContent = "← Volver a las fichas de países";
+      btnBack.onclick = () => retroceder("s-paises");
+    } else {
+      btnBack.textContent = "← Volver al grupo";
+      btnBack.onclick = () => retroceder("s-grupo");
+    }
   }
 
   // Links externos generados dinámicamente
@@ -528,7 +552,11 @@ function renderFicha(res) {
     <!-- ═══ Equipo / Asignación ═══ -->
     <div class="ficha-seccion">
       ${g ? `
-        <h2 class="ficha-seccion-titulo">${esAdmin ? `👥 Grupo asignado — Grupo ${g}` : `👥 Tu equipo — Grupo ${g}`}</h2>
+        <h2 class="ficha-seccion-titulo">${
+          esAdmin
+            ? `👥 Grupo asignado — Grupo ${g}`
+            : (g === (S.parts[S.me]?.grupo) ? `👥 Tu equipo — Grupo ${g}` : `👥 Grupo asignado — Grupo ${g}`)
+        }</h2>
         <p class="ficha-equipo-sub">${miembros.length} integrantes cocinando ${p.n}</p>
         <div class="ficha-equipo">
           ${miembros.map(m => {
@@ -663,6 +691,95 @@ function renderFicha(res) {
   confetti({ particleCount: 80, spread: 70, origin: { y: .2 } });
 }
 
+/**
+ * crearPaisCardHTML(p, opts) — Componente de tarjeta de país reutilizable.
+ * Garantiza consistencia visual y de datos entre el panel Admin y la vista de Participantes.
+ */
+function crearPaisCardHTML(p, { isParticipant = false, miGrupo = null } = {}) {
+  const asignado = Object.entries(S.grupos || {}).find(([letra, d]) => d && d.pais === p.id);
+  const letraGrupo = asignado ? asignado[0] : null;
+  const cantMiembros = letraGrupo ? Object.values(S.parts || {}).filter(m => m.grupo === letraGrupo).length : 0;
+
+  let statusClass = "status-libre";
+  let statusHTML = "<span>⚪ Disponible en ruleta</span>";
+
+  if (isParticipant) {
+    if (letraGrupo && letraGrupo === miGrupo) {
+      statusClass = "status-propio";
+      statusHTML = `<span>⭐ ¡Asignado a tu <strong>Grupo ${letraGrupo}</strong>!</span>`;
+    } else if (letraGrupo) {
+      statusClass = "status-asignado";
+      statusHTML = `<span>🔒 Asignado a <strong>Grupo ${letraGrupo}</strong></span>`;
+    } else {
+      statusClass = "status-libre";
+      statusHTML = `<span>🎲 Disponible para tu grupo</span>`;
+    }
+  } else {
+    if (letraGrupo) {
+      statusClass = "status-asignado";
+      statusHTML = `<span>🟢 Asignado a <strong>Grupo ${letraGrupo}</strong> (${cantMiembros} miembros)</span>`;
+    } else {
+      statusClass = "status-libre";
+      statusHTML = `<span>⚪ Disponible en ruleta</span>`;
+    }
+  }
+
+  return `
+    <div class="adm-pais-card" data-ver-pais="${p.id}" style="cursor:pointer">
+      <div class="adm-pais-img-wrap">
+        <img class="adm-pais-img" src="${p.img}" alt="${esc(p.n)}" loading="lazy" onerror="this.style.opacity='0.4'">
+        <img class="adm-pais-flag-float" src="https://flagcdn.com/w80/${p.iso}.png" alt="Bandera de ${p.n}">
+        <span class="adm-pais-con-pill">${esc(p.con)}</span>
+      </div>
+      <div class="adm-pais-body">
+        <div class="adm-pais-title-row">
+          <h3 class="adm-pais-name">${esc(p.n)}</h3>
+          <span class="adm-pais-cap">🏛️ ${esc(p.cap)}</span>
+        </div>
+        <p class="adm-pais-oficial">${esc(p.of)}</p>
+
+        <div class="adm-pais-status-pill ${statusClass}">
+          ${statusHTML}
+        </div>
+
+        <div class="adm-pais-platos-mini">
+          ${(p.platos || []).map(plato => `
+            <span class="adm-plato-mini-tag">${plato.emoji || '🍽️'} ${esc(plato.nombre)}</span>
+          `).join("")}
+        </div>
+
+        <button type="button" class="adm-btn-ver-pais" data-ver-pais="${p.id}">
+          📖 Ver ficha completa
+        </button>
+      </div>
+    </div>`;
+}
+
+/** renderPaisesParticipante() — Catálogo de países interactivo para los participantes */
+function renderPaisesParticipante() {
+  show("s-paises");
+
+  S.partFiltro = S.partFiltro || "todos";
+
+  // Actualizar botones de filtro para participantes
+  document.querySelectorAll("#paisesFiltrosPart .adm-filtro-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.filtroPart === S.partFiltro);
+  });
+
+  const me = S.parts[S.me];
+  const miGrupo = me ? me.grupo : null;
+
+  const filtrados = PAISES.filter(p => {
+    if (S.partFiltro === "todos") return true;
+    return p.con.toLowerCase().includes(S.partFiltro.toLowerCase());
+  });
+
+  const grid = $("#paisesGrid");
+  if (grid) {
+    grid.innerHTML = filtrados.map(p => crearPaisCardHTML(p, { isParticipant: true, miGrupo })).join("");
+  }
+}
+
 /** renderAdmin() — Panel de administración con pestañas de grupos y catálogo de países */
 function renderAdmin() {
   const psActivos   = Object.values(S.parts).filter(p => S.letras.includes(p.grupo));
@@ -768,44 +885,7 @@ function renderAdmin() {
       return p.con.toLowerCase().includes(S.adminFiltro.toLowerCase());
     });
 
-    $("#admPaisesGrid").innerHTML = filtrados.map(p => {
-      const asignado = Object.entries(S.grupos || {}).find(([letra, d]) => d && d.pais === p.id);
-      const letraGrupo = asignado ? asignado[0] : null;
-      const cantMiembros = letraGrupo ? Object.values(S.parts || {}).filter(m => m.grupo === letraGrupo).length : 0;
-
-      return `
-        <div class="adm-pais-card">
-          <div class="adm-pais-img-wrap">
-            <img class="adm-pais-img" src="${p.img}" alt="${esc(p.n)}" loading="lazy" onerror="this.style.opacity='0.4'">
-            <img class="adm-pais-flag-float" src="https://flagcdn.com/w80/${p.iso}.png" alt="Bandera de ${p.n}">
-            <span class="adm-pais-con-pill">${esc(p.con)}</span>
-          </div>
-          <div class="adm-pais-body">
-            <div class="adm-pais-title-row">
-              <h3 class="adm-pais-name">${esc(p.n)}</h3>
-              <span class="adm-pais-cap">🏛️ ${esc(p.cap)}</span>
-            </div>
-            <p class="adm-pais-oficial">${esc(p.of)}</p>
-
-            <div class="adm-pais-status-pill ${letraGrupo ? 'status-asignado' : 'status-libre'}">
-              ${letraGrupo
-                ? `<span>🟢 Asignado a <strong>Grupo ${letraGrupo}</strong> (${cantMiembros} miembros)</span>`
-                : `<span>⚪ Disponible en ruleta</span>`
-              }
-            </div>
-
-            <div class="adm-pais-platos-mini">
-              ${(p.platos || []).map(plato => `
-                <span class="adm-plato-mini-tag">${plato.emoji || '🍽️'} ${esc(plato.nombre)}</span>
-              `).join("")}
-            </div>
-
-            <button class="adm-btn-ver-pais" data-ver-pais="${p.id}">
-              📖 Ver ficha completa
-            </button>
-          </div>
-        </div>`;
-    }).join("");
+    $("#admPaisesGrid").innerHTML = filtrados.map(p => crearPaisCardHTML(p, { isParticipant: false })).join("");
   }
 }
 
@@ -851,19 +931,58 @@ document.addEventListener("click", e => {
     return;
   }
 
-  // Filtros de continentes
-  const filtroBtn = e.target.closest(".adm-filtro-btn");
+  // Filtros de continentes (Participantes)
+  const filtroPartBtn = e.target.closest("[data-filtro-part]");
+  if (filtroPartBtn) {
+    S.partFiltro = filtroPartBtn.dataset.filtroPart;
+    renderPaisesParticipante();
+    return;
+  }
+
+  // Filtros de continentes (Admin)
+  const filtroBtn = e.target.closest("[data-filtro]");
   if (filtroBtn) {
     S.adminFiltro = filtroBtn.dataset.filtro;
     renderAdmin();
     return;
   }
 
-  // Ver ficha gastronómica de un país (desde catálogo o desde tarjeta de grupo)
+  // Ver ficha gastronómica de un país (desde catálogo admin, catálogo participante o tarjeta de grupo)
   const verPaisBtn = e.target.closest("[data-ver-pais]");
   if (verPaisBtn) {
     const paisId = verPaisBtn.dataset.verPais;
-    navegar("s-ficha", { fromAdmin: true, pais: paisId });
+    if (S.view === "s-admin") {
+      navegar("s-ficha", { fromAdmin: true, pais: paisId });
+    } else {
+      navegar("s-ficha", { fromCatalogo: true, pais: paisId });
+    }
+    return;
+  }
+
+  // Abrir catálogo de fichas de países desde la sala de espera
+  if (e.target.closest("#btnVerPaisesGrupo, .btn-paises-box, [data-ver-catalogo-paises]")) {
+    e.preventDefault();
+    navegar("s-paises");
+    return;
+  }
+
+  // Volver desde catálogo de países al grupo
+  if (e.target.closest("#btnVolverGrupoP")) {
+    e.preventDefault();
+    retroceder("s-grupo", { stage: "grupo" });
+    return;
+  }
+
+  // Volver desde ficha gastronómica
+  if (e.target.closest("#btnVolverGrupoF")) {
+    e.preventDefault();
+    if (S.fromAdmin) {
+      retroceder("s-admin");
+    } else if (S.fromCatalogo) {
+      retroceder("s-paises");
+    } else {
+      retroceder("s-grupo");
+    }
     return;
   }
 
@@ -906,6 +1025,12 @@ $("#btnFicha").onclick   = () => {
   navegar("s-ficha", { stage: "ficha", pais: res?.pais });
 };
 
+// Abrir catálogo de fichas de países desde la sala de espera
+const btnVerPaisesGrupo = $("#btnVerPaisesGrupo");
+if (btnVerPaisesGrupo) {
+  btnVerPaisesGrupo.onclick = () => navegar("s-paises");
+}
+
 // ── Navegación: botones de retroceso ───────────────────────────
 $("#btnVolverInicio").onclick  = () => retroceder("s-intro");
 $("#btnVolverNombre").onclick  = () => retroceder("s-nombre");
@@ -913,8 +1038,18 @@ $("#btnVolverGrupo").onclick   = () => {
   if (S.anim) return; // no salir durante la animación de la ruleta
   retroceder("s-grupo", { stage: "grupo" });
 };
+const btnVolverGrupoP = $("#btnVolverGrupoP");
+if (btnVolverGrupoP) {
+  btnVolverGrupoP.onclick = () => retroceder("s-grupo", { stage: "grupo" });
+}
 $("#btnVolverGrupoF").onclick  = () => {
-  retroceder(S.fromAdmin ? "s-admin" : "s-grupo");
+  if (S.fromAdmin) {
+    retroceder("s-admin");
+  } else if (S.fromCatalogo) {
+    retroceder("s-paises");
+  } else {
+    retroceder("s-grupo");
+  }
 };
 
 // Selección de experiencia en cocina (Sí / No)

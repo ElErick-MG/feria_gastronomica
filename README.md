@@ -35,16 +35,19 @@ Aplicación web interactiva y multidispositivo para gestionar **eventos gastron�
 │  3. 🍳 Habilidades    →  ¿Tienes experiencia en cocina? Sí / No  │
 │  4. 👥 Asignación     →  Algoritmo balanceado → Grupo A–J activos │
 │  5. ⏳ Sala de Espera →  Barra en tiempo real · lista de tu equipo│
-│  6. 🎡 Ruleta         →  Giro grupal · Animación GSAP · Confetti │
-│  7. 🌍 Ficha País     →  Fotos de platos y regiones emblemáticas, │
+│                          · Botón de Reglas · Fichas de países    │
+│  6. 🗺️ Catálogo Países→  Explora los 10 países candidatos y sus  │
+│                          fichas técnicas mientras esperas al grupo│
+│  7. 🎡 Ruleta         →  Giro grupal · Animación GSAP · Confetti │
+│  8. 🌍 Ficha País     →  Fotos de platos y regiones emblemáticas, │
 │                          ingredientes, equipo, tips y links      │
-│  8. 🛠️ Modo Admin      →  Pestañas: Grupos y Catálogo de Fichas    │
+│  9. 🛠️ Modo Admin      →  Pestañas: Grupos y Catálogo de Fichas    │
 │                          de los 10 países con filtros en vivo    │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-> 🔙 La navegación incluye botones de retroceso contextuales en las pantallas que lo requieren (Identificación, Cocina, Ruleta y Ficha tanto para participantes como para administradores).
+> 🔙 La navegación incluye botones de retroceso contextuales en las pantallas que lo requieren (Identificación, Cocina, Catálogo de países, Ruleta y Ficha tanto para participantes como para administradores).
 >
 > 📜 **Reglas del Evento:** Botón de consulta flotante disponible en la bienvenida, la sala de espera grupal, la ruleta y la ficha del país, con las bases oficiales, fecha, hora, lugar, requisitos y video guía referencial de TikTok.
 

@@ -108,19 +108,26 @@ La aplicación funciona como una SPA (Single Page Application) controlada por la
    * Lista en vivo de los compañeros de equipo con tags de experiencia.
    * Barra de progreso animada indicando `inscritos / cupo`.
    * Botón de ruleta deshabilitado hasta que se complete el cupo configurado.
-5. **`s-ruleta` (Sorteo Sincronizado):** Ruleta SVG interactiva. Cualquier miembro del grupo puede girar; el resultado se sincroniza en Firebase y dispara la animación simultáneamente en los dispositivos de todos los integrantes.
-6. **`s-ficha` (Resultado Gastronómico — versión interactiva completa):** Ficha técnica/didáctica estilo revista con:
-   - Hero con imagen del plato icónico, bandera, nombre del país y badge de grupo (o catálogo oficial si es visto por admin).
+   * Botón flotante y de caja para consultar las reglas oficiales del evento.
+   * Botón **"🌍 Fichas de países"** para explorar el catálogo de países mientras el grupo se completa.
+5. **`s-paises` (Catálogo de Países para Participantes):**
+   * Mensaje destacado introductorio: *"Ficha de los países que le puede tocar cocinar a tu grupo"*, informando que al equipo se le asignará al azar la gastronomía de uno de los 10 países.
+   * Filtros por continente (Todos, América, Europa, Asia, África).
+   * Cards interactivas reutilizables (`crearPaisCardHTML`) con estados contextuales: `⭐ ¡Asignado a tu Grupo X!` (destacado con borde dorado), `🔒 Asignado a Grupo X` o `🎲 Disponible para tu grupo`.
+   * Acceso a la ficha completa de cada país con retorno inteligente a `s-paises`.
+6. **`s-ruleta` (Sorteo Sincronizado):** Ruleta SVG interactiva. Cualquier miembro del grupo puede girar; el resultado se sincroniza en Firebase y dispara la animación simultáneamente en los dispositivos de todos los integrantes.
+7. **`s-ficha` (Resultado Gastronómico — versión interactiva completa):** Ficha técnica/didáctica estilo revista con:
+   - Hero con imagen del plato icónico, bandera, nombre del país y badge de grupo (o catálogo oficial si es visto por admin/participante).
    - 5 datos rápidos (capital, continente, idioma, moneda, población).
-   - 👥 **Equipo / Estado de asignación** — lista de integrantes del grupo o estado libre/disponible para ruleta si es visto por admin.
+   - 👥 **Equipo / Estado de asignación** — lista de integrantes del grupo o estado libre/disponible para ruleta si es visto por admin o desde el catálogo.
    - 🍽️ **Platos típicos con fotos web** — tarjetas con foto individual de cada plato, badge emoji y descripción apetitosa.
    - 📍 **Zonas y regiones emblemáticas con fotos web** — tarjetas fotográficas de las 2 regiones de mayor relevancia culinaria y cultural.
    - 🧂 Ingredientes estrella en pills/chips.
    - 📜 Historia gastronómica / ✨ Qué los caracteriza.
    - 👨‍🍳 Tip para la feria / 💡 Dato curioso.
    - 🔗 **Links externos** — Wikipedia, YouTube, Google y Cookpad generados dinámicamente.
-   - Botón de retroceso inteligente: vuelve a `s-grupo` para participantes, o a `s-admin` para administradores.
-7. **`s-admin` (Panel de Administración con Pestañas):** Solo accesible mediante PIN. Incluye dos pestañas:
+   - Botón de retroceso inteligente: vuelve a `s-grupo`, a `s-paises` (si se accedió desde el catálogo de participantes) o a `s-admin` (para administradores).
+8. **`s-admin` (Panel de Administración con Pestañas):** Solo accesible mediante PIN. Incluye dos pestañas:
    - **📊 Pestaña "Grupos y Configuración":** Steppers para configurar grupos (1–10) e integrantes por grupo, cálculo de cupo total en tiempo real, cards de grupos con integrantes, estadísticas de experiencia, país sorteado y botón directo para ver su ficha gastronómica.
    - **🌍 Pestaña "Fichas de Países":** Catálogo completo de los 10 países con filtros de continente (Todos, América, Europa, Asia, África), estado de asignación en tiempo real (🟢 Asignado a Grupo X vs ⚪ Disponible) y botón para abrir e inspeccionar la ficha completa.
 
