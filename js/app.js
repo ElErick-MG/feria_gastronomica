@@ -109,8 +109,26 @@ let ultimoIntentoSalida = 0;
 function show(id) {
   if (S.view === id) return;
   S.view = id;
-  document.querySelectorAll(".screen").forEach(s => s.hidden = s.id !== id);
-  gsap.fromTo("#" + id, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .4, ease: "power2.out" });
+  document.querySelectorAll(".screen").forEach(s => {
+    if (s.id !== id) {
+      s.hidden = true;
+      // Limpiar transforms residuales de pantallas ocultas
+      gsap.set(s, { clearProps: "transform,opacity" });
+    }
+  });
+  const el = document.getElementById(id);
+  el.hidden = false;
+  gsap.fromTo(el, { opacity: 0, y: 24 }, {
+    opacity: 1, y: 0, duration: .4, ease: "power2.out",
+    onComplete() {
+      // Eliminar el transform inline residual (translateY(0px))
+      // que GSAP deja al terminar la animación. Sin esto, el
+      // transform crea un nuevo stacking context / compositing
+      // layer que invalida el hit-test de los botones hijos en
+      // Chrome, Firefox y Edge en producción.
+      gsap.set(el, { clearProps: "transform" });
+    }
+  });
 }
 
 /**
@@ -267,42 +285,47 @@ onValue(ref(db, "grupos"),        s => { S.grupos = s.val() || {}; render(); });
 async function registrar(cocina) {
   const key = slug(S.nombre);
 
-  const r = await runTransaction(ref(db, "participantes"), cur => {
-    cur = cur || {};
-    if (cur[key]) return cur;                              // ya registrado: no duplicar
+  try {
+    const r = await runTransaction(ref(db, "participantes"), cur => {
+      cur = cur || {};
+      if (cur[key]) return cur;                              // ya registrado: no duplicar
 
-    const letrasActivas = S.letras;
-    const cupoTotal     = S.numGrupos * S.maxPorGrupo;
-    
-    // Solo contar participantes en grupos activos contra el cupo total
-    const activos = Object.values(cur).filter(p => letrasActivas.includes(p.grupo));
-    if (activos.length >= cupoTotal) return;     // cupo lleno en grupos activos: abortar
+      const letrasActivas = S.letras;
+      const cupoTotal     = S.numGrupos * S.maxPorGrupo;
+      
+      // Solo contar participantes en grupos activos contra el cupo total
+      const activos = Object.values(cur).filter(p => letrasActivas.includes(p.grupo));
+      if (activos.length >= cupoTotal) return;     // cupo lleno en grupos activos: abortar
 
-    const same = {}, tot = {};
-    letrasActivas.forEach(l => same[l] = tot[l] = 0);
-    Object.values(cur).forEach(p => {
-      if (!letrasActivas.includes(p.grupo)) return;        // ignorar grupos eliminados
-      tot[p.grupo]++;
-      if (p.cocina === cocina) same[p.grupo]++;
+      const same = {}, tot = {};
+      letrasActivas.forEach(l => same[l] = tot[l] = 0);
+      Object.values(cur).forEach(p => {
+        if (!letrasActivas.includes(p.grupo)) return;        // ignorar grupos eliminados
+        tot[p.grupo]++;
+        if (p.cocina === cocina) same[p.grupo]++;
+      });
+
+      // Solo considerar grupos con espacio disponible
+      const disponibles = letrasActivas.filter(l => tot[l] < S.maxPorGrupo);
+      if (!disponibles.length) return;                       // todos llenos: abortar
+
+      // Ordenar: menor concentración del mismo tipo, desempate por tamaño total
+      const g = disponibles.sort((a, b) => same[a] - same[b] || tot[a] - tot[b])[0];
+
+      cur[key] = { nombre: S.nombre, cocina, grupo: g, ts: Date.now() };
+      return cur;
     });
 
-    // Solo considerar grupos con espacio disponible
-    const disponibles = letrasActivas.filter(l => tot[l] < S.maxPorGrupo);
-    if (!disponibles.length) return;                       // todos llenos: abortar
+    if (!r.committed) return toast("El cupo de participantes ya está completo");
 
-    // Ordenar: menor concentración del mismo tipo, desempate por tamaño total
-    const g = disponibles.sort((a, b) => same[a] - same[b] || tot[a] - tot[b])[0];
-
-    cur[key] = { nombre: S.nombre, cocina, grupo: g, ts: Date.now() };
-    return cur;
-  });
-
-  if (!r.committed) return toast("El cupo de participantes ya está completo");
-
-  S.parts = r.snapshot.val();
-  S.me    = key;
-  S.stage = "grupo";
-  navegar("s-grupo", { stage: "grupo" }, true);
+    S.parts = r.snapshot.val();
+    S.me    = key;
+    S.stage = "grupo";
+    navegar("s-grupo", { stage: "grupo" }, true);
+  } catch (err) {
+    console.error("[Registro]", err);
+    toast("Error al registrar. Intenta de nuevo.");
+  }
 }
 
 /** Reasigna automáticamente a un participante si su grupo fue desactivado por el admin */
@@ -1025,31 +1048,15 @@ $("#btnFicha").onclick   = () => {
   navegar("s-ficha", { stage: "ficha", pais: res?.pais });
 };
 
-// Abrir catálogo de fichas de países desde la sala de espera
-const btnVerPaisesGrupo = $("#btnVerPaisesGrupo");
-if (btnVerPaisesGrupo) {
-  btnVerPaisesGrupo.onclick = () => navegar("s-paises");
-}
-
 // ── Navegación: botones de retroceso ───────────────────────────
+// NOTA: btnVerPaisesGrupo, btnVolverGrupoP y btnVolverGrupoF se manejan
+// exclusivamente por event delegation (más arriba) para evitar doble
+// navegación y fallos de hit-test con GSAP en producción.
 $("#btnVolverInicio").onclick  = () => retroceder("s-intro");
 $("#btnVolverNombre").onclick  = () => retroceder("s-nombre");
 $("#btnVolverGrupo").onclick   = () => {
   if (S.anim) return; // no salir durante la animación de la ruleta
   retroceder("s-grupo", { stage: "grupo" });
-};
-const btnVolverGrupoP = $("#btnVolverGrupoP");
-if (btnVolverGrupoP) {
-  btnVolverGrupoP.onclick = () => retroceder("s-grupo", { stage: "grupo" });
-}
-$("#btnVolverGrupoF").onclick  = () => {
-  if (S.fromAdmin) {
-    retroceder("s-admin");
-  } else if (S.fromCatalogo) {
-    retroceder("s-paises");
-  } else {
-    retroceder("s-grupo");
-  }
 };
 
 // Selección de experiencia en cocina (Sí / No)
@@ -1092,6 +1099,14 @@ $("#fNombre").onsubmit = async e => {
 
 /* ===== 8. INICIO DE LA APLICACIÓN ===== */
 buildRueda();
+
+// Autenticación anónima al inicio: necesaria para que las escrituras
+// en Firebase (registro, giro de ruleta) funcionen para TODOS los
+// usuarios, no solo los que pasaron por el flujo de administrador.
+// Sin esto, las Security Rules (auth != null) bloquean las transacciones
+// silenciosamente y los botones parecen no responder en navegadores
+// que no tienen una sesión de auth cacheada de pruebas anteriores.
+signInAnonymously(auth).catch(err => console.warn("[Auth Init]", err));
 
 // Inicialización de la pila de historial con retención contra salida accidental
 if (!history.state || !history.state.root) {

@@ -45,7 +45,12 @@ h1, h2, h3 {
   padding: 1.5rem;
   text-align: center;
   position: relative;
-  overflow: hidden;
+  /* overflow: clip en lugar de hidden: recorta visualmente los emojis
+     flotantes que salen del viewport, pero NO crea un nuevo stacking
+     context ni recorta el área de hit-test de los botones hijos.
+     Con 'hidden', GSAP translateY desplaza el contenedor y los botones
+     al fondo quedan fuera del área clickeable en desktop (Firefox/Chrome). */
+  overflow: clip;
 }
 
 .box {
