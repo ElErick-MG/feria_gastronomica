@@ -47,6 +47,7 @@ feria_gastronomica/
 │   ├── firebase.js         # Inicialización del SDK, Firebase Auth anónimo y exports de DB.
 │   ├── data.js             # Catálogo inmutable de los 10 países con recetas y datos culturales.
 │   ├── ruleta.js           # Renderizado SVG dinámico de la ruleta, animación GSAP y transacción de giro.
+│   ├── reglas.js           # Catálogo de directrices, inyección dinámica del modal y animaciones GSAP.
 │   └── app.js              # Enrutador, estado global 'S', listeners en vivo, balanceo y eventos DOM.
 └── README.md               # Documentación pública para GitHub y guía de replicación.
 ```
@@ -63,7 +64,11 @@ feria_gastronomica/
    * `buildRueda()`: Dibuja un `<svg>` con sectores angulares (`360 / PAISES.length`), cálculo trigonométrico (`Math.cos`, `Math.sin`), etiquetas de texto orientadas y banderas.
    * `animar(res, me, onDone)`: Ejecuta animación GSAP de 6 vueltas completas + sector específico con inercia, dispara confeti y muestra mensaje contextual.
    * `girar()`: Transacción atómica en Firebase (`grupos`) que garantiza que un solo miembro fije el país de su grupo, excluyendo países ya tomados.
-4. **[js/app.js](file:///d:/levantamientoProyectos/feria_gastronomica/js/app.js):**
+4. **[js/reglas.js](file:///d:/levantamientoProyectos/feria_gastronomica/js/reglas.js):**
+   * Catálogo de datos oficiales de las reglas (`REGLAS_INFO`: fecha, hora, lugar, dinámica de 4 integrantes, requisitos de presentación y criterios).
+   * Inyección dinámica del modal en el DOM (`ensureModal()`) para mantener `index.html` limpio y libre de marcado redundante.
+   * Control de animación GSAP de entrada/salida (`abrirReglas()`, `cerrarReglas()`), bloqueo de scroll y listeners automáticos para botones con `[data-abrir-reglas]`, `[data-cerrar-reglas]`, clic en backdrop y tecla <kbd>Escape</kbd>.
+5. **[js/app.js](file:///d:/levantamientoProyectos/feria_gastronomica/js/app.js):**
    * Mantiene el estado reactivo `S` con propiedades: `numGrupos` (1–10), `maxPorGrupo` (global), `cupo` (= numGrupos × maxPorGrupo), `letras` (getter A–J), `adminTab` ("grupos" | "paises") y `adminFiltro` ("todos" | continente).
    * Registra listeners en tiempo real (`onValue`) para `config/numGrupos`, `config/maxPorGrupo`, `participantes` y `grupos`.
    * Ejecuta el **algoritmo de balanceo** dinámico de equipos al registrar un participante, respetando el límite `maxPorGrupo` por grupo.
@@ -129,8 +134,9 @@ La aplicación funciona como una SPA (Single Page Application) controlada por la
 * **Mecanismo:**
   1. Utiliza `runTransaction` sobre `/participantes` para garantizar atomicidad y evitar colisiones si varios usuarios se inscriben al mismo milisegundo.
   2. Lee las letras activas (`S.letras` = `A` a la letra `numGrupos - 1`).
-  3. Filtra los grupos con espacio disponible: `tot[l] < S.maxPorGrupo`.
-  4. Inicializa contadores para los grupos activos (`tot[]` y `same[]`).
+  3. Comprueba el cupo activo (cuenta únicamente participantes en letras activas: `letrasActivas.includes(p.grupo)`).
+  4. Filtra los grupos activos con espacio disponible: `tot[l] < S.maxPorGrupo`.
+  5. Inicializa contadores para los grupos activos (`tot[]` y `same[]`).
   5. Ordena los grupos disponibles con el criterio:
      ```javascript
      disponibles.sort((a, b) => same[a] - same[b] || tot[a] - tot[b])[0];

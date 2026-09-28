@@ -19,6 +19,7 @@
 
   <!-- Paso 1: Bienvenida -->
   <section id="s-intro" class="screen">
+    <button class="btn-top-reglas" data-abrir-reglas title="Ver reglas del evento">📜 Reglas</button>
     <span class="float" style="left:8%;top:15%">🌮</span>
     <span class="float" style="right:10%;top:20%">🍝</span>
     <span class="float" style="left:14%;bottom:18%">🍣</span>
@@ -26,7 +27,10 @@
     <h1>Conjunto Carmencita</h1>
     <h2>Feria Gastronómica</h2>
     <p>Arma tu equipo, gira la ruleta y descubre qué país cocinarán juntos.</p>
-    <button id="btnStart">Ingresar</button>
+    <div class="row" style="margin-top:.5rem">
+      <button id="btnStart">Ingresar</button>
+      <button class="btn-secundario" data-abrir-reglas>📜 Reglas</button>
+    </div>
     <button class="link" id="linkAdmin">Administrador</button>
   </section>
 
@@ -55,6 +59,7 @@
 
   <!-- Pasos 4 y 5: Grupo asignado + sala de espera -->
   <section id="s-grupo" class="screen" hidden>
+    <button class="btn-top-reglas" data-abrir-reglas title="Ver reglas del evento">📜 Reglas</button>
     <div class="box">
       <p>Tu equipo es el</p>
       <div class="letra">Grupo <span id="gLetra"></span></div>
@@ -62,12 +67,14 @@
       <div class="bar"><div id="barra"></div></div>
       <p id="progTxt"></p>
       <button id="btnRuleta" style="margin-top:1rem" disabled>Esperando a los demás…</button>
+      <button class="btn-reglas-box" data-abrir-reglas style="margin-top:.8rem">📜 Ver reglas del evento</button>
     </div>
   </section>
 
   <!-- Paso 6: Ruleta de países -->
   <section id="s-ruleta" class="screen" hidden>
     <button class="btn-back" id="btnVolverGrupo">← Volver al grupo</button>
+    <button class="btn-top-reglas" data-abrir-reglas title="Ver reglas del evento">📜 Reglas</button>
     <h2>Ruleta de países</h2>
     <div id="ruedaBox">
       <div id="puntero"></div>
@@ -81,6 +88,7 @@
   <!-- Paso 7: Ficha gastronómica del país -->
   <section id="s-ficha" class="screen" hidden>
     <button class="btn-back" id="btnVolverGrupoF">← Volver al grupo</button>
+    <button class="btn-top-reglas" data-abrir-reglas title="Ver reglas del evento">📜 Reglas</button>
     <div id="ficha"></div>
   </section>
 
@@ -139,6 +147,9 @@
         <!-- Cupo total calculado -->
         <p id="admCupoCalc" class="adm-cupo-calc"></p>
       </div>
+
+      <!-- Aviso para participantes en grupos desactivados -->
+      <div id="admInactivosNotice" style="width:100%;max-width:860px"></div>
 
       <div id="admGrid" class="adm-grid-custom" style="max-width:860px"></div>
     </div>

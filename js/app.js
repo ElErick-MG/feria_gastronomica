@@ -13,6 +13,7 @@
 import { PAISES } from "./data.js";
 import { db, auth, ref, onValue, get, set, remove, runTransaction, signInAnonymously } from "./firebase.js";
 import { buildRueda, animar, girar } from "./ruleta.js";
+import "./reglas.js";
 
 /* ===== 1. UTILIDADES ===== */
 export const $ = s => document.querySelector(s);
@@ -259,7 +260,10 @@ async function registrar(cocina) {
 
     const letrasActivas = S.letras;
     const cupoTotal     = S.numGrupos * S.maxPorGrupo;
-    if (Object.keys(cur).length >= cupoTotal) return;     // cupo lleno: abortar
+    
+    // Solo contar participantes en grupos activos contra el cupo total
+    const activos = Object.values(cur).filter(p => letrasActivas.includes(p.grupo));
+    if (activos.length >= cupoTotal) return;     // cupo lleno en grupos activos: abortar
 
     const same = {}, tot = {};
     letrasActivas.forEach(l => same[l] = tot[l] = 0);
@@ -286,6 +290,90 @@ async function registrar(cocina) {
   S.me    = key;
   S.stage = "grupo";
   navegar("s-grupo", { stage: "grupo" }, true);
+}
+
+/** Reasigna automáticamente a un participante si su grupo fue desactivado por el admin */
+async function reubicarParticipanteIndividual(key) {
+  if (!key) return;
+  await runTransaction(ref(db, "participantes"), cur => {
+    if (!cur || !cur[key]) return cur;
+    const letrasActivas = S.letras;
+    if (letrasActivas.includes(cur[key].grupo)) return cur;
+
+    const same = {}, tot = {};
+    letrasActivas.forEach(l => same[l] = tot[l] = 0);
+    Object.values(cur).forEach(p => {
+      if (!letrasActivas.includes(p.grupo)) return;
+      tot[p.grupo]++;
+      if (p.cocina === cur[key].cocina) same[p.grupo] = (same[p.grupo] || 0) + 1;
+    });
+
+    const disponibles = letrasActivas.filter(l => tot[l] < S.maxPorGrupo);
+    if (!disponibles.length) return cur;
+
+    const g = disponibles.sort((a, b) => (same[a] || 0) - (same[b] || 0) || tot[a] - tot[b])[0];
+    cur[key].grupo = g;
+    return cur;
+  });
+}
+
+/** Reubica a todos los participantes en grupos inactivos hacia los grupos activos con espacio */
+async function reubicarTodosLosInactivos() {
+  const r = await runTransaction(ref(db, "participantes"), cur => {
+    if (!cur) return cur;
+    const letrasActivas = S.letras;
+
+    const same = {}, tot = {};
+    letrasActivas.forEach(l => same[l] = tot[l] = 0);
+    Object.values(cur).forEach(p => {
+      if (!letrasActivas.includes(p.grupo)) return;
+      tot[p.grupo]++;
+      if (p.cocina === "si") same[p.grupo] = (same[p.grupo] || 0) + 1;
+    });
+
+    Object.entries(cur).forEach(([key, p]) => {
+      if (letrasActivas.includes(p.grupo)) return;
+
+      const disponibles = letrasActivas.filter(l => tot[l] < S.maxPorGrupo);
+      if (!disponibles.length) return;
+
+      const g = disponibles.sort((a, b) => {
+        const sameA = p.cocina === "si" ? (same[a] || 0) : (tot[a] - (same[a] || 0));
+        const sameB = p.cocina === "si" ? (same[b] || 0) : (tot[b] - (same[b] || 0));
+        return sameA - sameB || tot[a] - tot[b];
+      })[0];
+
+      cur[key].grupo = g;
+      tot[g]++;
+      if (p.cocina === "si") same[g] = (same[g] || 0) + 1;
+    });
+
+    return cur;
+  });
+
+  if (r.committed) {
+    toast("✅ Participantes reubicados en grupos activos");
+  } else {
+    toast("⚠️ No se pudo reubicar (verifica el cupo)");
+  }
+}
+
+/** Elimina del nodo participantes a los integrantes que quedaron en grupos desactivados */
+async function eliminarParticipantesInactivos() {
+  const psInactivos = Object.entries(S.parts).filter(([_, p]) => !S.letras.includes(p.grupo));
+  if (!psInactivos.length) return;
+
+  if (!confirm(`¿Eliminar a los ${psInactivos.length} participantes de los grupos desactivados?`)) return;
+
+  try {
+    for (const [key] of psInactivos) {
+      await remove(ref(db, `participantes/${key}`));
+    }
+    toast("🗑️ Participantes inactivos eliminados");
+  } catch (err) {
+    console.error(err);
+    toast("Error al eliminar participantes");
+  }
 }
 
 /* ===== 6. RENDER (enrutador de pantallas) ===== */
@@ -317,14 +405,22 @@ function render() {
 function renderGrupo(me) {
   show("s-grupo");
 
-  const total = Object.keys(S.parts).length;
+  // Si el grupo del participante fue desactivado (el admin redujo los grupos activos)
+  if (!S.letras.includes(me.grupo)) {
+    reubicarParticipanteIndividual(S.me);
+    return;
+  }
+
+  // Contar únicamente participantes en grupos activos
+  const psActivos = Object.values(S.parts).filter(p => S.letras.includes(p.grupo));
+  const total = psActivos.length;
   const lleno = total >= S.cupo;
 
   // Letra del grupo
   $("#gLetra").textContent = me.grupo;
 
   // Lista de compañeros en tiempo real
-  $("#miembros").innerHTML = Object.values(S.parts)
+  $("#miembros").innerHTML = psActivos
     .filter(p => p.grupo === me.grupo)
     .map(p =>
       `<li>${esc(p.nombre)}<span class="tag">${p.cocina === "si" ? "👨‍🍳 Con experiencia" : "🌱 Novato"}</span></li>`
@@ -569,16 +665,19 @@ function renderFicha(res) {
 
 /** renderAdmin() — Panel de administración con pestañas de grupos y catálogo de países */
 function renderAdmin() {
-  const ps  = Object.values(S.parts);
-  const total = ps.length;
-  const cupoTotal = S.numGrupos * S.maxPorGrupo;
+  const psActivos   = Object.values(S.parts).filter(p => S.letras.includes(p.grupo));
+  const psInactivos = Object.values(S.parts).filter(p => !S.letras.includes(p.grupo));
+  const total       = psActivos.length;
+  const cupoTotal   = S.numGrupos * S.maxPorGrupo;
 
   // Estado de pestañas y filtros por defecto
   S.adminTab    = S.adminTab || "grupos";
   S.adminFiltro = S.adminFiltro || "todos";
 
   // Resumen superior
-  $(".adm-resumen").textContent = `${total} / ${cupoTotal} participantes registrados`;
+  $(".adm-resumen").textContent = psInactivos.length
+    ? `${total} / ${cupoTotal} participantes en grupos activos (${psInactivos.length} en grupos desactivados)`
+    : `${total} / ${cupoTotal} participantes registrados`;
 
   // Actualizar clases activas en botones de pestañas y visibilidad de paneles
   document.querySelectorAll(".adm-nav-tab").forEach(tab => {
@@ -596,9 +695,29 @@ function renderAdmin() {
     $("#admCupoCalc").textContent    =
       `Cupo total calculado: ${S.numGrupos} grupos × ${S.maxPorGrupo} integrantes = ${cupoTotal} personas`;
 
+    // Aviso si existen participantes en grupos desactivados
+    const inactivosNotice = $("#admInactivosNotice");
+    if (inactivosNotice) {
+      inactivosNotice.innerHTML = psInactivos.length ? `
+        <div class="adm-inactivos-box">
+          <div class="adm-inactivos-header">
+            <span style="font-size:1.3rem">⚠️</span>
+            <div>
+              <strong>${psInactivos.length} participante(s) en grupos desactivados</strong>
+              <small style="display:block;color:var(--mut);margin-top:.2rem">Al tener ${S.numGrupos} grupos activos (A–${S.letras[S.letras.length - 1]}), estos participantes no están en ningún grupo activo: ${psInactivos.map(p => `<strong>${esc(p.nombre)}</strong> [Grupo ${p.grupo}]`).join(", ")}</small>
+            </div>
+          </div>
+          <div class="row" style="margin-top:.5rem;justify-content:flex-start;gap:.5rem">
+            <button id="btnReubicarInactivos" class="adm-btn-reubicar">🔄 Reubicar en grupos activos</button>
+            <button id="btnEliminarInactivos" class="adm-btn-eliminar-huerfanos">🗑️ Eliminar huérfanos</button>
+          </div>
+        </div>
+      ` : "";
+    }
+
     // Grid de grupos con diseño enriquecido
     $("#admGrid").innerHTML = S.letras.map(l => {
-      const miembros  = ps.filter(p => p.grupo === l);
+      const miembros  = psActivos.filter(p => p.grupo === l);
       const expertos  = miembros.filter(p => p.cocina === "si").length;
       const novatos   = miembros.length - expertos;
       const sorteo    = S.grupos[l];
@@ -708,8 +827,20 @@ $("#linkAdmin").onclick  = async () => {
 // ── Admin ──────────────────────────────────────────────────────
 $("#btnVolver").onclick  = () => retroceder("s-intro");
 
-// Event delegation para navegación y acciones del Admin (pestañas, filtros, ver ficha, steppers)
+// Event delegation para navegación y acciones del Admin (pestañas, filtros, ver ficha, steppers, reubicar/eliminar)
 document.addEventListener("click", e => {
+  // Reubicar participantes huérfanos en grupos activos
+  if (e.target.closest("#btnReubicarInactivos")) {
+    reubicarTodosLosInactivos();
+    return;
+  }
+
+  // Eliminar participantes huérfanos de grupos inactivos
+  if (e.target.closest("#btnEliminarInactivos")) {
+    eliminarParticipantesInactivos();
+    return;
+  }
+
   // Pestañas del Admin (Grupos vs Catálogo de Fichas)
   const tabBtn = e.target.closest(".adm-nav-tab");
   if (tabBtn) {
@@ -834,8 +965,11 @@ if (!history.state || !history.state.root) {
 }
 
 // Animaciones de entrada en la pantalla de bienvenida
-gsap.from("#s-intro > *:not(.float)", {
+gsap.from("#s-intro > *:not(.float):not(.btn-top-reglas)", {
   y: 40, opacity: 0, stagger: .15, duration: .8, ease: "power3.out"
+});
+gsap.from("#s-intro .btn-top-reglas", {
+  opacity: 0, duration: .6, delay: .4, ease: "power2.out"
 });
 
 // Emojis flotantes: animación perpetua de levitación

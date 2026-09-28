@@ -1285,3 +1285,470 @@ li {
     height: 150px;
   }
 }
+
+/* ===== 16. Modal Flotante de Reglas del Evento y Botones ===== */
+
+/* Botón de acceso superior en esquinas */
+.btn-top-reglas {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  background: rgba(242, 165, 65, .12);
+  color: var(--a);
+  border: 1px solid rgba(242, 165, 65, .35);
+  font-size: .82rem;
+  font-weight: 700;
+  padding: .45rem .95rem;
+  border-radius: 99px;
+  cursor: pointer;
+  z-index: 2;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  transition: all .2s ease;
+  touch-action: manipulation;
+}
+
+.btn-top-reglas:hover {
+  background: linear-gradient(135deg, var(--a), var(--b));
+  color: #1b0f0a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(242, 165, 65, .35);
+  border-color: transparent;
+}
+
+/* Botón secundario en pantalla de bienvenida */
+.btn-secundario {
+  background: rgba(255, 255, 255, .08);
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, .2);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s ease;
+  touch-action: manipulation;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+}
+
+.btn-secundario:hover {
+  background: rgba(242, 165, 65, .18);
+  border-color: rgba(242, 165, 65, .5);
+  color: var(--a);
+  transform: translateY(-2px) scale(1.03);
+}
+
+/* Botón dentro del card de espera en s-grupo */
+.btn-reglas-box {
+  width: 100%;
+  background: rgba(242, 165, 65, .1);
+  color: var(--a);
+  border: 1px solid rgba(242, 165, 65, .3);
+  font-weight: 700;
+  font-size: .88rem;
+  padding: .75rem 1.2rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  touch-action: manipulation;
+}
+
+.btn-reglas-box:hover {
+  background: rgba(242, 165, 65, .2);
+  border-color: var(--a);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(242, 165, 65, .25);
+}
+
+/* Overlay / Backdrop del modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 6, 4, .82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Card contenedor del modal */
+.modal-card {
+  position: relative;
+  width: 100%;
+  max-width: 580px;
+  max-height: calc(100vh - 2.5rem);
+  background: radial-gradient(circle at 50% 0%, #3a1e12 0%, var(--card) 65%);
+  border: 1px solid rgba(242, 165, 65, .3);
+  border-radius: 22px;
+  padding: 1.8rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .8), 0 0 35px rgba(242, 165, 65, .12);
+  overflow-y: auto;
+  text-align: left;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 165, 65, .4) transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 1.05rem;
+}
+
+.modal-card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-card::-webkit-scrollbar-thumb {
+  background: rgba(242, 165, 65, .4);
+  border-radius: 99px;
+}
+
+.modal-card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Botón cerrar modal (X) */
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .08);
+  color: var(--mut);
+  border: 1px solid rgba(255, 255, 255, .12);
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: all .2s ease;
+  touch-action: manipulation;
+  z-index: 3;
+}
+
+.modal-close:hover {
+  background: rgba(228, 87, 46, .25);
+  color: #fff;
+  border-color: var(--b);
+  transform: rotate(90deg);
+}
+
+/* Cabecera del modal */
+.modal-header {
+  text-align: center;
+  padding: 0 1.5rem;
+}
+
+.modal-badge {
+  display: inline-block;
+  font-size: .75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--a);
+  background: rgba(242, 165, 65, .12);
+  border: 1px solid rgba(242, 165, 65, .25);
+  padding: .25rem .75rem;
+  border-radius: 99px;
+  margin-bottom: .5rem;
+}
+
+.modal-titulo {
+  font-size: clamp(1.4rem, 5vw, 1.85rem);
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Grid de datos rápidos (Fecha, Hora, Lugar) */
+.modal-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .6rem;
+}
+
+.modal-info-item {
+  background: rgba(255, 255, 255, .04);
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 12px;
+  padding: .65rem .75rem;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+}
+
+.modal-info-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.modal-info-item small {
+  display: block;
+  font-size: .68rem;
+  color: var(--mut);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.modal-info-item strong {
+  font-size: .85rem;
+  color: var(--ink);
+}
+
+/* Banner de dinámica */
+.modal-banner-dinamica {
+  background: rgba(242, 165, 65, .08);
+  border-left: 4px solid var(--a);
+  border-radius: 0 12px 12px 0;
+  padding: .85rem 1rem;
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.modal-banner-dinamica p {
+  margin: 0;
+}
+
+/* Card de enlace a video guía de TikTok */
+.modal-tiktok-card {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  background: rgba(0, 0, 0, .38);
+  border: 1px solid rgba(242, 165, 65, .3);
+  border-radius: 14px;
+  padding: .75rem 1rem;
+  text-decoration: none;
+  color: var(--ink);
+  transition: all .2s ease;
+  touch-action: manipulation;
+}
+
+.modal-tiktok-card:hover {
+  background: rgba(242, 165, 65, .12);
+  border-color: var(--a);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(242, 165, 65, .25);
+}
+
+.modal-tiktok-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.modal-tiktok-info {
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.modal-tiktok-info strong {
+  font-size: .88rem;
+  color: var(--ink);
+}
+
+.modal-tiktok-info small {
+  font-size: .75rem;
+  color: var(--mut);
+  line-height: 1.3;
+}
+
+.modal-tiktok-badge {
+  font-size: .75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--a), var(--b));
+  color: #1b0f0a;
+  padding: .35rem .75rem;
+  border-radius: 99px;
+  flex-shrink: 0;
+  transition: transform .2s ease;
+}
+
+.modal-tiktok-card:hover .modal-tiktok-badge {
+  transform: scale(1.05);
+}
+
+/* Sección de requisitos */
+.modal-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.modal-subtitulo {
+  font-size: 1rem;
+  color: var(--a);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.modal-puntos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.modal-puntos li {
+  display: flex;
+  align-items: flex-start;
+  gap: .7rem;
+  padding: .6rem .8rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid rgba(255, 255, 255, .06);
+  font-size: .85rem;
+  line-height: 1.4;
+  border-bottom: none;
+}
+
+.modal-punto-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: .05rem;
+}
+
+/* Caja de criterios de evaluación */
+.modal-criterios {
+  background: linear-gradient(135deg, rgba(242, 165, 65, .12), rgba(228, 87, 46, .12));
+  border: 1px solid rgba(242, 165, 65, .3);
+  border-radius: 14px;
+  padding: .9rem 1.1rem;
+}
+
+.modal-criterios-header {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  color: var(--a);
+  font-size: .9rem;
+  margin-bottom: .3rem;
+}
+
+.modal-criterios-icon {
+  font-size: 1.1rem;
+}
+
+.modal-criterios p {
+  font-size: .84rem;
+  color: var(--ink);
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* Botón de acción del modal */
+.modal-btn-ok {
+  width: 100%;
+  background: linear-gradient(135deg, var(--a), var(--b));
+  color: #1b0f0a;
+  font-weight: 800;
+  font-size: .95rem;
+  padding: .85rem 1.4rem;
+  border-radius: 999px;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 4px 18px rgba(242, 165, 65, .35);
+  transition: all .2s ease;
+  touch-action: manipulation;
+  text-align: center;
+  margin-top: .3rem;
+}
+
+.modal-btn-ok:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 22px rgba(242, 165, 65, .45);
+}
+
+/* Responsivo para pantallas pequeñas */
+@media (max-width: 520px) {
+  .modal-info-grid {
+    grid-template-columns: 1fr;
+  }
+  .modal-card {
+    padding: 1.3rem;
+    max-height: calc(100vh - 1.5rem);
+  }
+  .btn-top-reglas {
+    top: 1rem;
+    right: 1rem;
+    font-size: .78rem;
+    padding: .35rem .75rem;
+  }
+}
+
+/* Caja de aviso para participantes en grupos desactivados */
+.adm-inactivos-box {
+  background: rgba(228, 87, 46, .12);
+  border: 1px solid rgba(228, 87, 46, .35);
+  border-radius: var(--r);
+  padding: 1rem 1.2rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  width: 100%;
+  margin-bottom: .4rem;
+}
+
+.adm-inactivos-header {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+
+.adm-inactivos-header strong {
+  color: var(--b);
+  font-size: .95rem;
+}
+
+.adm-btn-reubicar {
+  background: rgba(242, 165, 65, .15);
+  border: 1px solid rgba(242, 165, 65, .4);
+  color: var(--a);
+  font-size: .82rem;
+  font-weight: 700;
+  padding: .45rem .9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .2s ease;
+  touch-action: manipulation;
+}
+
+.adm-btn-reubicar:hover {
+  background: var(--a);
+  color: #1b0f0a;
+}
+
+.adm-btn-eliminar-huerfanos {
+  background: #7a2a1a;
+  border: 1px solid #9e3522;
+  color: #fff;
+  font-size: .82rem;
+  font-weight: 700;
+  padding: .45rem .9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .2s ease;
+  touch-action: manipulation;
+}
+
+.adm-btn-eliminar-huerfanos:hover {
+  background: #9e3522;
+}
+

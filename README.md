@@ -45,6 +45,29 @@ Aplicación web interactiva y multidispositivo para gestionar **eventos gastron�
 ```
 
 > 🔙 La navegación incluye botones de retroceso contextuales en las pantallas que lo requieren (Identificación, Cocina, Ruleta y Ficha tanto para participantes como para administradores).
+>
+> 📜 **Reglas del Evento:** Botón de consulta flotante disponible en la bienvenida, la sala de espera grupal, la ruleta y la ficha del país, con las bases oficiales, fecha, hora, lugar, requisitos y video guía referencial de TikTok.
+
+---
+
+## 📜 Reglas y Dinámica de la Feria
+
+La feria comunitaria cuenta con lineamientos oficiales que los participantes pueden consultar en cualquier momento a través de la ventana flotante de reglas:
+
+* 📅 **Fecha:** 3 de octubre
+* ⏰ **Hora:** 13h00
+* 📍 **Lugar:** Conjunto Carmencita
+* 👥 **Dinámica:** Exposición gastronómica en grupos de **4 integrantes**, conformados por personas de diferentes familias. A cada grupo se le asignará un país al azar mediante la ruleta.
+* 🎬 **Video Guía de Referencia:** [Ver video en TikTok](https://vt.tiktok.com/ZSq4oYRWN/) para conocer la dinámica de exposición, stands y degustación.
+
+### Requisitos de cada grupo:
+1. 🗺️ **Cultura y ubicación:** Información representativa sobre la cultura y geografía del país asignado.
+2. 🍲 **Comida típica:** Preparación de platos típicos en pequeñas porciones para degustación.
+3. 🎨 **Decoración:** Ambientación y elementos alusivos al país.
+4. 👘 **Vestimenta representativa:** De ser posible *(no es obligatorio)*.
+5. 👥 **Exposición grupal:** Presentación oral en la que participen todos los integrantes del equipo.
+
+> ⭐ **Criterios de Evaluación:** Se tomará en cuenta la creatividad, organización, presentación, conocimiento del país e integración familiar.
 
 ---
 
@@ -99,6 +122,7 @@ feria_gastronomica/
 │   ├── firebase.js         # Configuración Firebase, Auth Anónimo y exports DB
 │   ├── data.js             # Catálogo de países con info gastronómica/cultural
 │   ├── ruleta.js           # Construcción SVG, animación GSAP y giro grupal
+│   ├── reglas.js           # Modal dinámico de reglas del evento, directrices y video guía
 │   └── app.js              # Estado global, listeners en tiempo real y UI
 └── README.md
 ```
@@ -329,6 +353,7 @@ Si prefieres alojar el frontend en Vercel:
 - ✅ Múltiples dispositivos simultáneos vía Firebase Real-time listeners
 - ✅ Reconexión automática: si ya te registraste, retomas donde lo dejaste
 - ✅ Navegación de retroceso en pantallas donde aplica (← Volver)
+- ✅ Ventana flotante de reglas (`js/reglas.js`): animada con GSAP, accesible con tecla Escape y clic fuera
 
 
 ---
